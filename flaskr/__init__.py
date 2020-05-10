@@ -26,9 +26,15 @@ def create_app(test_config=None):
 
     # Initialize extension objects with app
     from flaskr.models import db
+    from flaskr.oauth import oauth
 
     db.init_app(app)
     Migrate(app, db)
+    oauth.init_app(app)
+
+    from flaskr import auth
+
+    app.register_blueprint(auth.bp)
 
     # Shell context for debugging
     @app.shell_context_processor
