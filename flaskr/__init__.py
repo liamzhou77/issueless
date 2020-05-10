@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flask_migrate import Migrate
 
 
 def create_app(test_config=None):
@@ -22,5 +23,11 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    # Initialize extension objects with app
+    from flaskr.models import db
+
+    db.init_app(app)
+    Migrate(app, db)
 
     return app

@@ -5,8 +5,10 @@ __pycache__/
 
 instance/
 
+.vscode/
 .pytest_cache/
 .coverage
+.flaskenv
 htmlcov/
 
 dist/
