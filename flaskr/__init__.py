@@ -30,4 +30,11 @@ def create_app(test_config=None):
     db.init_app(app)
     Migrate(app, db)
 
+    # Shell context for debugging
+    @app.shell_context_processor
+    def make_shell_context():
+        from flaskr.models import User
+
+        return {'db': db, 'User': User}
+
     return app
