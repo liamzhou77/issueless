@@ -1,9 +1,10 @@
 from flask import current_app, redirect, request, url_for
-from flask_login import current_user, login_user
+from flask_login import current_user, login_required, login_user, logout_user
 
 from flaskr.auth import bp
 from flaskr.models import User
 from flaskr.oauth import configure_oauth
+from six.moves.urllib.parse import urlencode
 
 
 @bp.route('/callback')
@@ -45,3 +46,18 @@ def login():
         redirect_uri=request.url_root
         + url_for('auth.callback')[1:]
     )
+
+
+@bp.route('/logout')
+@login_required
+def logout():
+    """Logs user out both from the issue tracker and auth0."""
+    logout_user()
+
+    client_secret = current_app.config['AUTH0_CLIENT_SECRET']
+    auth0 = configure_oauth(client_secret)
+    params = {
+        'returnTo': url_for('auth.login', _external=True),
+        'client_id': '3silBpYY8BSfVWca3Q0suIwB8h24vMzz',
+    }
+    return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
