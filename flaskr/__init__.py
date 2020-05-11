@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 
 from flaskr import auth
 from flaskr import dashboard
+from flaskr import errors
 from flaskr.models import db, login
 from flaskr.oauth import oauth
 
@@ -42,6 +43,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
     app.add_url_rule('/', endpoint='index')
+    app.register_blueprint(errors.bp)
 
     # shell context for debugging
     @app.shell_context_processor

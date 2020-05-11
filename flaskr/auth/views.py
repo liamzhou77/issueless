@@ -1,4 +1,4 @@
-from flask import current_app, redirect, request, url_for
+from flask import abort, current_app, redirect, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from flaskr.auth import bp
@@ -12,7 +12,14 @@ def callback():
     """Logs users in after they are authenticated by Auth0."""
     client_secret = current_app.config['AUTH0_CLIENT_SECRET']
     auth0 = configure_oauth(client_secret)
-    auth0.authorize_access_token()
+
+    # Hard coding callback route in browser would result in various exceptions. In this
+    # case an Unauthorized error with 401 status code would be more appropriate,
+    # because only Auth0 is authorized to access this callback route.
+    try:
+        auth0.authorize_access_token()
+    except Exception:
+        abort(401)
 
     rsp = auth0.get('userinfo')
     userinfo = rsp.json()
