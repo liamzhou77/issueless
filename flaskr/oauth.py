@@ -7,6 +7,7 @@ domain = 'issue-tracker-7.auth0.com'
 
 
 def configure_oauth(client_secret):
+    """Configures Authlib with auth0's application info."""
     auth0 = oauth.register(
         'auth0',
         client_id=client_id,

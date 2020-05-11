@@ -1,10 +1,17 @@
 import os
 
 from flask import Flask
+from flask_bootstrap import Bootstrap
 from flask_migrate import Migrate
+
+from flaskr import auth
+from flaskr import dashboard
+from flaskr.models import db, login
+from flaskr.oauth import oauth
 
 
 def create_app(test_config=None):
+    """Creates a flask instance and declares extensions and blueprints."""
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
@@ -24,19 +31,19 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # Initialize extension objects with app
-    from flaskr.models import db
-    from flaskr.oauth import oauth
-
+    # initialize extension objects with app
+    Bootstrap(app)
     db.init_app(app)
+    login.init_app(app)
     Migrate(app, db)
     oauth.init_app(app)
 
-    from flaskr import auth
-
+    # register blueprints
     app.register_blueprint(auth.bp)
+    app.register_blueprint(dashboard.bp)
+    app.add_url_rule('/', endpoint='index')
 
-    # Shell context for debugging
+    # shell context for debugging
     @app.shell_context_processor
     def make_shell_context():
         from flaskr.models import User
