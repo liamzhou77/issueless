@@ -1,6 +1,5 @@
 from authlib.integrations.flask_client import OAuth
 
-
 oauth = OAuth()
 client_id = '3silBpYY8BSfVWca3Q0suIwB8h24vMzz'
 domain = 'issue-tracker-7.auth0.com'

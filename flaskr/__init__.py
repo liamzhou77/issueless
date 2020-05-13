@@ -20,6 +20,7 @@ def create_app(test_config=None):
         SQLALCHEMY_DATABASE_URI=(
             'sqlite:///' + os.path.join(app.instance_path, 'flaskr.db')
         ),
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 
     if test_config is None:
