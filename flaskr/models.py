@@ -9,7 +9,7 @@ login.login_view = 'auth.login'
 # association table for users and projects
 user_project = db.Table(
     'user_project',
-    db.Column('user_id', db.String(), db.ForeignKey('users.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
     db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
     db.Column('role', db.String(9), nullable=False),
 )
@@ -23,7 +23,8 @@ class User(UserMixin, db.Model):
 
     __tablename__ = 'users'
 
-    id = db.Column(db.String(), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    sub = db.Column(db.String(), unique=True, nullable=False)
     email = db.Column(db.String(), unique=True, nullable=False)
     first_name = db.Column(db.String(), nullable=False)
     last_name = db.Column(db.String(), nullable=False)
@@ -35,7 +36,7 @@ class User(UserMixin, db.Model):
     )
 
     def __repr__(self):
-        return f"<User '{self.first_name} {self.last_name}' '{self.email}'"
+        return f"<User '{self.id}' '{self.first_name} {self.last_name}' '{self.email}'"
 
     def insert(self):
         """Inserts user into users table."""

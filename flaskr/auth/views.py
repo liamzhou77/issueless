@@ -25,12 +25,12 @@ def callback():
     rsp = auth0.get('userinfo')
     userinfo = rsp.json()
 
-    user_id = userinfo['sub']
-    user = User.query.get(user_id)
+    sub = userinfo['sub']
+    user = User.query.filter_by(sub=sub).first()
     # insert user into table if not exist
     if not user:
         user = User(
-            id=user_id,
+            sub=sub,
             email=userinfo['email'],
             first_name=userinfo['given_name'],
             last_name=userinfo['family_name'],
