@@ -1,3 +1,5 @@
+from hashlib import md5
+
 from flask_login import LoginManager, UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
@@ -42,6 +44,12 @@ class User(UserMixin, db.Model):
         """Inserts user into users table."""
         db.session.add(self)
         db.session.commit()
+
+    def avatar(self, size):
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
+            digest, size
+        )
 
 
 class Project(db.Model):

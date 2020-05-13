@@ -1,11 +1,11 @@
 from flask import abort, current_app, redirect, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
+from six.moves.urllib.parse import urlencode
+from werkzeug.urls import url_parse
 
 from flaskr.auth import bp
 from flaskr.models import User
 from flaskr.oauth import configure_oauth
-from six.moves.urllib.parse import urlencode
-from werkzeug.urls import url_parse
 
 
 @bp.route('/callback')
