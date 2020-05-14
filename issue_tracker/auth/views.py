@@ -15,12 +15,13 @@ def callback():
     auth0 = configure_oauth(client_secret)
 
     # Hard coding callback route in browser would result in various exceptions. In this
-    # case an Unauthorized error with 401 status code would be more appropriate,
-    # because only Auth0 is authorized to access this callback route.
+    # case an Unauthorized error with 404 status code would be more appropriate,
+    # because only Auth0 is authorized to access this callback route, this route should
+    # not be visible to users.
     try:
         auth0.authorize_access_token()
     except Exception:
-        abort(401)
+        abort(404)
 
     rsp = auth0.get('userinfo')
     userinfo = rsp.json()
@@ -85,3 +86,16 @@ def logout():
         'client_id': '3silBpYY8BSfVWca3Q0suIwB8h24vMzz',
     }
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
+
+
+@bp.route('/test/login', methods=['POST'])
+def _login():
+    """This view is only for testing."""
+    if current_app.config['TESTING']:
+        user_id = request.form['id']
+        user = User.query.get(user_id)
+
+        login_user(user)
+        return f'User {user_id} logged in'
+    else:
+        abort(404)

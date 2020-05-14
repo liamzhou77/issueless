@@ -1,8 +1,9 @@
 import os
 
+import pytest
+
 from issue_tracker import create_app
 from issue_tracker.models import db
-import pytest
 
 with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
     _data_sql = f.read().decode('utf8')
@@ -10,7 +11,13 @@ with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
 
 @pytest.fixture
 def app():
-    app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite://'})
+    app = create_app(
+        {
+            'TESTING': True,
+            'SQLALCHEMY_DATABASE_URI': 'sqlite://',
+            'WTF_CSRF_ENABLED': False,
+        }
+    )
     app_context = app.app_context()
 
     app_context.push()
@@ -30,3 +37,16 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+class AuthActions(object):
+    def __init__(self, client):
+        self._client = client
+
+    def login(self):
+        return self._client.post('/auth/test/login', data={'id': 1})
+
+
+@pytest.fixture
+def auth(client):
+    return AuthActions(client)
