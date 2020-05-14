@@ -1,6 +1,21 @@
 INSERT INTO
   users (sub, email, first_name, last_name)
 VALUES
-  ('sub1', 'email1', 'first_name1', 'last_name1'),
-  ('sub2', 'email2', 'first_name2', 'last_name2'),
-  ('sub3', 'email3', 'first_name3', 'last_name3');
+  (
+    'test_sub_1',
+    'test_email_1',
+    'test_first_name_1',
+    'test_last_name_1'
+  ),
+  (
+    'test_sub_2',
+    'test_email_2',
+    'test_first_name_2',
+    'test_last_name_2'
+  ),
+  (
+    'test_sub_3',
+    'test_email_3',
+    'test_first_name_3',
+    'test_last_name_3'
+  );
