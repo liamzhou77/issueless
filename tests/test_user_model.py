@@ -1,4 +1,4 @@
-from flaskr.models import User
+from issue_tracker.models import User
 
 
 def test_avatar(app):

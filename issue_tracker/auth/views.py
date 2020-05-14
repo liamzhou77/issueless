@@ -1,11 +1,11 @@
 from flask import abort, current_app, redirect, request, session, url_for
-from flask_login import current_user, login_required, login_user, logout_user
+from flask_login import current_user, login_user, logout_user
 from six.moves.urllib.parse import urlencode
 from werkzeug.urls import url_parse
 
-from flaskr.auth import bp
-from flaskr.models import User
-from flaskr.oauth import configure_oauth
+from issue_tracker.auth import bp
+from issue_tracker.models import User
+from issue_tracker.oauth import configure_oauth
 
 
 @bp.route('/callback')
@@ -36,7 +36,7 @@ def callback():
             last_name=userinfo['family_name'],
         )
         user.insert()
-    login_user(user)
+    login_user(user, remember=True)
 
     next_page = session.get('next_page')
     session.pop('next_page')
@@ -68,9 +68,14 @@ def login():
 
 
 @bp.route('/logout')
-@login_required
 def logout():
     """Logs user out both from the issue tracker and auth0."""
+    # Redirect users to login page if they are not authenticated. Use this instead of
+    # @login_required, so users would not be redirected back to logout view after
+    # authentification
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
     logout_user()
 
     client_secret = current_app.config['AUTH0_CLIENT_SECRET']

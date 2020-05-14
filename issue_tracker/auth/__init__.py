@@ -2,4 +2,4 @@ from flask import Blueprint
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-from flaskr.auth import views
+from issue_tracker.auth import views

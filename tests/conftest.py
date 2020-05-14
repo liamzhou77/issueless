@@ -1,7 +1,7 @@
 import os
 
-from flaskr import create_app
-from flaskr.models import db
+from issue_tracker import create_app
+from issue_tracker.models import db
 import pytest
 
 with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:

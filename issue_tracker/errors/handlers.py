@@ -1,7 +1,7 @@
 from flask import render_template
 
-from flaskr.errors import bp
-from flaskr.models import db
+from issue_tracker.errors import bp
+from issue_tracker.models import db
 
 
 @bp.app_errorhandler(401)
