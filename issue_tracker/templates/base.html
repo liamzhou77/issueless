@@ -1,7 +1,26 @@
-{% extends "bootstrap/base.html" %}
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+    {% if title %}{{ title }} - {% endif %}Issue Tracker
+{% endblock %}
+
+{% block navbar %}
+  <nav class="navbar navbar-default">
+    <div class="container">
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href=""></a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
+          <img src="{{ current_user.avatar(64) }}" alt="Avatar">
+        </ul>
+      </div>
+    </div>
+  </nav>
+{% endblock %}
 
 {% block content %}
-  <h1>Welcome, {{ current_user.first_name }} {{ current_user.last_name }}</h1>
-  <img src="{{ current_user.avatar(64) }}" alt="Avatar">
-  <a href="{{ url_for('auth.logout') }}">Logout</a>
+  {% block app_content %}{% endblock %}
 {% endblock %}

@@ -5,7 +5,6 @@ from issue_tracker.dashboard import bp
 
 
 @bp.route('/')
-@bp.route('/index')
 @login_required
 def index():
-    return render_template('base.html')
+    return render_template('dashboard.html', title='Dashboard')

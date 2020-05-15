@@ -1,7 +1,7 @@
 from datetime import timedelta
 import os
 
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_migrate import Migrate
 
@@ -47,8 +47,14 @@ def create_app(test_config=None):
     # register blueprints
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
-    app.add_url_rule('/', endpoint='index')
+    app.add_url_rule('/dashboard', endpoint='index')
     app.register_blueprint(errors.bp)
+
+    @app.route('/')
+    @app.route('/index')
+    def index():
+        """Redirects user to /dashboard route."""
+        return redirect(url_for('dashboard.index'))
 
     # shell context for debugging
     @app.shell_context_processor

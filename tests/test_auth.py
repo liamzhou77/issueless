@@ -1,4 +1,4 @@
-from flask import session, url_for
+from flask import session
 
 
 def test_callback(client):
@@ -10,13 +10,13 @@ def test_callback(client):
 def test_login(client, auth):
     with client:
         client.get('/auth/login')
-        assert session['next_page'] == url_for('index')
+        assert session['next_page'] == '/dashboard'
         client.get('/auth/login?next=')
-        assert session['next_page'] == url_for('index')
+        assert session['next_page'] == '/dashboard'
 
     auth.login()
     rsp = client.get('/auth/login')
-    assert 'http://localhost/' == rsp.headers['Location']
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
 
 
 def test_logout(client, auth):
