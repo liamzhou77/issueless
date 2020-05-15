@@ -14,7 +14,9 @@ def app():
     app = create_app(
         {
             'TESTING': True,
-            'SQLALCHEMY_DATABASE_URI': 'sqlite://',
+            'SQLALCHEMY_DATABASE_URI': (
+                'postgresql://liamzhou@localhost/test_issue_tracker'
+            ),
             'WTF_CSRF_ENABLED': False,
         }
     )

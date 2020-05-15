@@ -19,3 +19,15 @@ VALUES
     'test_first_name_3',
     'test_last_name_3'
   );
+
+INSERT INTO
+  projects (title, description)
+VALUES
+  ('test_title_1', 'test_description_1'),
+  ('test_title_2', 'test_description_2');
+
+INSERT INTO
+  user_project
+VALUES
+  (1, 1),
+  (1, 2);

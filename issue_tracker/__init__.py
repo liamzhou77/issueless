@@ -54,13 +54,13 @@ def create_app(test_config=None):
     @app.route('/index')
     def index():
         """Redirects user to /dashboard route."""
-        return redirect(url_for('dashboard.index'))
+        return redirect(url_for('dashboard.dashboard'))
 
     # shell context for debugging
     @app.shell_context_processor
     def make_shell_context():
-        from issue_tracker.models import User
+        from issue_tracker.models import User, Project
 
-        return {'db': db, 'User': User}
+        return {'db': db, 'User': User, 'Project': Project}
 
     return app

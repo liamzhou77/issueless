@@ -13,7 +13,6 @@ user_project = db.Table(
     'user_project',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
     db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
-    db.Column('role', db.String(9), nullable=False),
 )
 
 
@@ -33,8 +32,8 @@ class User(UserMixin, db.Model):
     projects = db.relationship(
         'Project',
         secondary=user_project,
-        lazy='subquery',
-        backref=db.backref("users", lazy=True),
+        lazy='dynamic',
+        backref=db.backref("users", lazy='dynamic'),
     )
 
     def __repr__(self):
@@ -56,7 +55,7 @@ class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(), nullable=False)
+    title = db.Column(db.String(), index=True, nullable=False)
     description = db.Column(db.String(), nullable=False)
 
     def __repr__(self):

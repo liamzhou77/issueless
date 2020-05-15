@@ -1,10 +1,11 @@
 from flask import render_template
-from flask_login import login_required
+from flask_login import current_user, login_required
 
 from issue_tracker.dashboard import bp
 
 
-@bp.route('/')
+@bp.route('/dashboard')
 @login_required
-def index():
-    return render_template('dashboard.html', title='Dashboard')
+def dashboard():
+    projects = current_user.projects.all()
+    return render_template('dashboard.html', title='Dashboard', projects=projects)
