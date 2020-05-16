@@ -2,7 +2,6 @@ from datetime import timedelta
 import os
 
 from flask import Flask, redirect, url_for
-from flask_bootstrap import Bootstrap
 from flask_migrate import Migrate
 
 from issue_tracker import auth
@@ -38,7 +37,6 @@ def create_app(test_config=None):
         pass
 
     # initialize extension objects with app
-    Bootstrap(app)
     db.init_app(app)
     login.init_app(app)
     Migrate(app, db)

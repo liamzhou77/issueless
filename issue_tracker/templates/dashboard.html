@@ -1,10 +1,49 @@
 {% extends 'base.html' %}
 
-{% block app_content %}
-    {% for project in projects %}
-        <div>
-            <h2>Projects</h2>
-            <p>{{ project.title }}</p>
+{% block content %}
+  <div class="card text-white bg-dark mb-3" style="max-width: 18rem;">
+    <div class="card-header">Projects</div>
+    <ul class="list-group list-group-flush">
+      {% for project in projects %}
+        <li class="list-group-item p-3 mb-2 bg-light text-dark">{{ project.title }}</li>
+      {% endfor %} 
+    </ul>
+  </div>
+  <!-- New Project Button -->
+  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#staticBackdrop">
+    Create New Project
+  </button>
+  <!-- New Project Modal -->
+  <div class="modal fade" id="staticBackdrop" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">New Project</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-    {% endfor %}
+        <div class="modal-body">
+          <form id="project-form" action="{{ url_for('dashboard.projects') }}" method="post">
+            <div class="form-group">
+              <label for="project-title">Title</label>
+              <input name="title" type="text" class="form-control" id="project-title" placeholder="your project's title">
+            </div>
+            <div class="form-group">
+              <label for="project-description">Description</label>
+              <textarea name="description" class="form-control" id="project-description" placeholder="your project's description" rows="3"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary" form="project-form">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %} 
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='submission.js') }}"></script>
 {% endblock %}

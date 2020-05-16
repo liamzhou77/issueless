@@ -37,7 +37,7 @@ class User(UserMixin, db.Model):
     )
 
     def __repr__(self):
-        return f"<User '{self.id}' '{self.first_name} {self.last_name}' '{self.email}'"
+        return f"<User '{self.id}' '{self.first_name} {self.last_name}' '{self.email}>'"
 
     def insert(self):
         """Inserts user into users table."""
@@ -59,7 +59,7 @@ class Project(db.Model):
     description = db.Column(db.String(), nullable=False)
 
     def __repr__(self):
-        return f"<Project '{self.id} {self.title}'"
+        return f"<Project '{self.id} {self.title}>'"
 
     def insert(self):
         """Inserts project into projects table."""
