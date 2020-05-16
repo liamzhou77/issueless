@@ -24,10 +24,12 @@ INSERT INTO
   projects (title, description)
 VALUES
   ('test_title_1', 'test_description_1'),
-  ('test_title_2', 'test_description_2');
+  ('test_title_2', 'test_description_2'),
+  ('test_title_3', 'test_description_3');
 
 INSERT INTO
   user_project
 VALUES
   (1, 1),
-  (1, 2);
+  (1, 2),
+  (1, 3);

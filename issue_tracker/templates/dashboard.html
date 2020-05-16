@@ -24,14 +24,20 @@
           </button>
         </div>
         <div class="modal-body">
-          <form id="project-form" action="{{ url_for('dashboard.projects') }}" method="post">
+          <form id="project-form" class="needs-validation" action="{{ url_for('dashboard.projects') }}" method="post" novalidate>
             <div class="form-group">
               <label for="project-title">Title</label>
-              <input name="title" type="text" class="form-control" id="project-title" placeholder="your project's title">
+              <input name="title" type="text" class="form-control" id="project-title" maxlength=50 placeholder="your project's title" required>
+              <div class="invalid-feedback">
+                Please provide your project's title.
+              </div>
             </div>
             <div class="form-group">
               <label for="project-description">Description</label>
-              <textarea name="description" class="form-control" id="project-description" placeholder="your project's description" rows="3"></textarea>
+              <textarea name="description" class="form-control" id="project-description" maxlength=200 placeholder="your project's description" rows="3" required></textarea>
+              <div class="invalid-feedback">
+                Please provide your project's description.
+              </div>
             </div>
           </form>
         </div>

@@ -17,7 +17,7 @@ def callback():
     # Hard coding callback route in browser would result in various exceptions. In this
     # case an Unauthorized error with 404 status code would be more appropriate,
     # because only Auth0 is authorized to access this callback route, this route should
-    # not be visible to users.
+    # not be accessible by users.
     try:
         auth0.authorize_access_token()
     except Exception:
@@ -41,6 +41,7 @@ def callback():
 
     next_page = session.get('next_page')
     session.pop('next_page')
+
     return redirect(next_page)
 
 
@@ -62,9 +63,8 @@ def login():
     session['next_page'] = next_page
 
     return auth0.authorize_redirect(
-        # generate the callback url
         redirect_uri=request.url_root
-        + url_for('auth.callback')[1:]
+        + url_for('auth.callback')[1:]  # generate the callback url
     )
 
 
@@ -73,7 +73,7 @@ def logout():
     """Logs user out both from the issue tracker and auth0."""
     # Redirect users to login page if they are not authenticated. Use this instead of
     # @login_required, so users would not be redirected back to logout view after
-    # authentification
+    # authentification.
     if not current_user.is_authenticated:
         return redirect(url_for('auth.login'))
 

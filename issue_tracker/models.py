@@ -44,6 +44,11 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         db.session.commit()
 
+    def insert_project(self, project):
+        """Inserts the input project under current user."""
+        self.projects.append(project)
+        db.session.commit()
+
     def avatar(self, size):
         digest = md5(self.email.lower().encode()).hexdigest()
         return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'

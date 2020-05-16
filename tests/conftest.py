@@ -11,6 +11,7 @@ with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
 
 @pytest.fixture
 def app():
+    """Create an application context and a mock database for each test."""
     app = create_app(
         {
             'TESTING': True,
