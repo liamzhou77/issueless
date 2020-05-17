@@ -9,8 +9,10 @@ from issue_tracker.models import Project
 @login_required
 def dashboard():
     """Renders the dashboard template."""
-    projects = current_user.projects.all()
-    return render_template('dashboard.html', title='Dashboard', projects=projects)
+    user_projects = current_user.user_projects
+    return render_template(
+        'dashboard.html', title='Dashboard', user_projects=user_projects
+    )
 
 
 @bp.route('/projects', methods=['POST'])
@@ -19,7 +21,7 @@ def projects():
     """Creates a new project."""
     # Each user can only create 4 projects at most. If the limit has already been
     # arrived, redirect user to dashboard with an error message
-    project_count = current_user.projects.count()
+    project_count = current_user.user_projects.count()
     if project_count == 4:
         flash(
             'You can not add any more projects, you can only create 4 or less projects.'
@@ -43,6 +45,6 @@ def projects():
         flash(error)
         return redirect(url_for('index'))
 
-    project = Project(title=title, description=description)
-    current_user.insert_project(project)
+    project = Project(title, description)
+    current_user.insert_project(project, 'Admin')
     return redirect(url_for('index'))
