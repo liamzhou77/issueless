@@ -30,6 +30,6 @@ VALUES
 INSERT INTO
   user_project
 VALUES
-  (1, 1, 'Admin'),
-  (1, 2, 'Admin'),
-  (1, 3, 'Admin');
+  (1, 1, 1),
+  (1, 2, 1),
+  (1, 3, 1);

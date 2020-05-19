@@ -1,4 +1,4 @@
-from issue_tracker.models import User
+from issue_tracker.models import User, UserProject
 
 
 def test_index(client):
@@ -65,16 +65,23 @@ def test_post_project_with_valid_data(client, auth):
 
     user_projects = User.query.get(1).user_projects
     assert user_projects.count() == 4
-    new_project = user_projects.filter_by(user_id=1, project_id=4).first().project
+
+    new_user_project = UserProject.query.filter_by(user_id=1, project_id=4).first()
+    role = new_user_project.role
+    assert role.name == 'Admin'
+
+    new_project = new_user_project.project
     assert new_project.title == 'test_title_4'
     assert new_project.description == 'test_description_4'
     assert 'http://localhost/dashboard' == rsp.headers['Location']
+
     # test add fifth project
     rsp = client.post(
         '/projects',
         data={'title': 'test_title_5', 'description': 'test_description_5'},
         follow_redirects=True,
     )
+    user_projects = User.query.get(1).user_projects
     assert user_projects.count() == 4
     assert (
         b'You can not add any more projects, you can only create 4 or less projects.'

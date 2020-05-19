@@ -26,14 +26,8 @@ class User(UserMixin, db.Model):
 
     projects = association_proxy('user_projects', 'project')
 
-    def __init__(self, sub, email, first_name, last_name):
-        self.sub = sub
-        self.email = email
-        self.first_name = first_name
-        self.last_name = last_name
-
     def __repr__(self):
-        return f'< User {self.id} {self.first_name} {self.last_name} {self.email} >'
+        return f'< User {self.id}, {self.first_name} {self.last_name}, {self.email} >'
 
     def insert(self):
         """Inserts user into users table."""
@@ -42,7 +36,8 @@ class User(UserMixin, db.Model):
 
     def insert_project(self, project, role):
         """Inserts the input project with input role under current user."""
-        UserProject(self, project, role)
+        r = Role.query.filter_by(name=role).first()
+        r.user_projects.append(UserProject(self, project))
         db.session.commit()
 
     def avatar(self, size):
@@ -55,12 +50,12 @@ class UserProject(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
-    role = db.Column(db.String(9), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
 
-    user = db.relationship(User, backref=db.backref('user_projects', lazy='dynamic'))
+    user = db.relationship('User', backref=db.backref('user_projects', lazy='dynamic'))
     project = db.relationship('Project')
 
-    def __init__(self, user, project, role):
+    def __init__(self, user, project, role=None):
         self.user = user
         self.project = project
         self.role = role
@@ -78,12 +73,8 @@ class Project(db.Model):
     title = db.Column(db.String(), index=True, nullable=False)
     description = db.Column(db.String(), nullable=False)
 
-    def __init__(self, title, description):
-        self.title = title
-        self.description = description
-
     def __repr__(self):
-        return f'< Project {self.id} {self.title} >'
+        return f'< Project {self.id}, {self.title} >'
 
     def insert(self):
         """Inserts project into projects table."""
@@ -97,6 +88,77 @@ class Project(db.Model):
 
     def update(self):
         """Updates project info."""
+        db.session.commit()
+
+
+class Permission(object):
+    """An object representation for permissions.
+
+    Each permission's value is a distinct number which is power of two.  Having it this
+    way makes all possible combinations of permissions have different values.
+    """
+
+    update_project = 1
+    delete_project = 2
+    invite_member = 4
+
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(9), unique=True, nullable=False)
+    permissions = db.Column(db.Integer, nullable=False)
+
+    user_projects = db.relationship('UserProject', backref='role', lazy='dynamic')
+
+    def __repr__(self):
+        return f'< Role {self.id}, {self.name}, {self.permissions} >'
+
+    def has_permission(self, permission):
+        """Checks if the self role has the input permission."""
+        return (
+            self.permissions & permission == permission
+        )  # use bitwise and to check if permission exists
+
+    def add_permission(self, permission):
+        """Adds the input permission if it does not exist in the self role."""
+        if not self.has_permission(permission):
+            self.permissions += permission
+
+    def remove_permission(self, permission):
+        """Removes the input permission if it exists in the self role."""
+        if self.has_permission(permission):
+            self.permissions -= permission
+
+    def reset_permissions(self):
+        """Sets the self role's permission value to 0."""
+        self.permissions = 0
+
+    @staticmethod
+    def insert_roles():
+        """Inserts roles into databse with their specific permissions."""
+        role_permissions = {
+            'Admin': [
+                Permission.update_project,
+                Permission.delete_project,
+                Permission.invite_member,
+            ],
+            'Reviewer': [],
+            'Developer': [],
+        }
+        # Update roles' permissions value instead of inserting new records if role
+        # already exists.
+        for r, permissions in role_permissions.items():
+            role = Role.query.filter_by(name=r).first()
+            if not role:
+                role = Role(name=r, permissions=0)
+            role.reset_permissions()
+            for permission in permissions:
+                role.add_permission(permission)
+            db.session.add(
+                role
+            )  # will be ignored if the role is already in the database
         db.session.commit()
 
 

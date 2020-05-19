@@ -45,6 +45,6 @@ def projects():
         flash(error)
         return redirect(url_for('index'))
 
-    project = Project(title, description)
+    project = Project(title=title, description=description)
     current_user.insert_project(project, 'Admin')
     return redirect(url_for('index'))

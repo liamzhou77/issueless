@@ -5,7 +5,7 @@
     <div class="card-header">Projects</div>
     <ul class="list-group list-group-flush">
       {% for user_project in user_projects %}
-        <li class="list-group-item p-3 mb-2 bg-light text-dark">{{ user_project.project.title }}---{{ user_project.role }}</li>
+        <li class="list-group-item p-3 mb-2 bg-light text-dark">{{ user_project.project.title }}---{{ user_project.role.name }}</li>
       {% endfor %} 
     </ul>
   </div>

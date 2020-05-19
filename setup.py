@@ -3,12 +3,9 @@ from setuptools import find_packages, setup
 requires = [
     'flask',
     'authlib',
-    'flask-bootstrap',
     'flask-login',
     'flask-migrate',
-    'flask-principal',
     'flask-sqlalchemy',
-    'flask-wtf',
     'psycopg2',
     'requests',
     'six',
@@ -22,4 +19,5 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=requires,
+    extras_require={'test': ['pytest', 'coverage']},
 )

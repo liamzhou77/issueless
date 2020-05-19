@@ -57,8 +57,14 @@ def create_app(test_config=None):
     # shell context for debugging
     @app.shell_context_processor
     def make_shell_context():
-        from issue_tracker.models import Project, User, UserProject
+        from issue_tracker.models import Project, Role, User, UserProject
 
-        return {'db': db, 'User': User, 'Project': Project, 'UserProject': UserProject}
+        return {
+            'db': db,
+            'User': User,
+            'Project': Project,
+            'UserProject': UserProject,
+            'Role': Role,
+        }
 
     return app

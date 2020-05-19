@@ -31,7 +31,10 @@ def callback():
     # insert user into table if not exist
     if not user:
         user = User(
-            sub, userinfo['email'], userinfo['given_name'], userinfo['family_name'],
+            sub=sub,
+            email=userinfo['email'],
+            first_name=userinfo['given_name'],
+            last_name=userinfo['family_name'],
         )
         user.insert()
     login_user(user, remember=True)

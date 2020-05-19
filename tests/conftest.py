@@ -3,7 +3,7 @@ import os
 import pytest
 
 from issue_tracker import create_app
-from issue_tracker.models import db
+from issue_tracker.models import db, Role
 
 with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
     _data_sql = f.read().decode('utf8')
@@ -11,7 +11,7 @@ with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
 
 @pytest.fixture
 def app():
-    """Create an application context and a mock database for each test."""
+    """Creates an application context and a mock database for each test."""
     app = create_app(
         {
             'TESTING': True,
@@ -26,6 +26,7 @@ def app():
     app_context.push()
 
     db.create_all()
+    Role.insert_roles()  # this method is tested in test_role_model.py
     db.session.execute(_data_sql)
     db.session.commit()
 
@@ -39,10 +40,13 @@ def app():
 
 @pytest.fixture
 def client(app):
+    """Returns a test client."""
     return app.test_client()
 
 
 class AuthActions(object):
+    """Actions to authorize test client."""
+
     def __init__(self, client):
         self._client = client
 
@@ -52,4 +56,5 @@ class AuthActions(object):
 
 @pytest.fixture
 def auth(client):
+    """Return the AuthActions object."""
     return AuthActions(client)
