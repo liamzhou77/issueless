@@ -31,5 +31,5 @@ INSERT INTO
   user_project
 VALUES
   (1, 1, 1),
-  (1, 2, 1),
-  (1, 3, 1);
+  (1, 2, 2),
+  (1, 3, 3);

@@ -5,7 +5,16 @@
     <div class="card-header">Projects</div>
     <ul class="list-group list-group-flush">
       {% for user_project in user_projects %}
-        <li class="list-group-item p-3 mb-2 bg-light text-dark">{{ user_project.project.title }}---{{ user_project.role.name }}</li>
+        {% set title = user_project.project.title %}
+        {% set role = user_project.role.name %}
+        <li class="list-group-item p-3 mb-2 bg-light text-dark">
+          {{ title }}---{{ role }}
+          {% if role == 'Admin' %}
+            <form action="{{ url_for('dashboard.delete_project', id=user_project.project_id) }}" method="post">
+              <button type="submit">delete</button>
+            </form>
+          {% endif %}
+        </li>
       {% endfor %} 
     </ul>
   </div>
@@ -24,7 +33,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <form id="project-form" class="needs-validation" action="{{ url_for('dashboard.projects') }}" method="post" novalidate>
+          <form id="project-form" class="needs-validation" action="{{ url_for('dashboard.create_project') }}" method="post" novalidate>
             <div class="form-group">
               <label for="project-title">Title</label>
               <input name="title" type="text" class="form-control" id="project-title" maxlength=50 placeholder="your project's title" required>

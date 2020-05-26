@@ -1,3 +1,11 @@
+"""All handlers for errors.
+
+  Typical usage example:
+
+  from errors import views
+"""
+
+
 from flask import render_template
 
 from issue_tracker.errors import bp

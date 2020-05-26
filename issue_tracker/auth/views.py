@@ -1,3 +1,10 @@
+"""All views for authorization.
+
+  Typical usage example:
+
+  from auth import views
+"""
+
 from flask import abort, current_app, redirect, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from six.moves.urllib.parse import urlencode
@@ -10,14 +17,22 @@ from issue_tracker.oauth import configure_oauth
 
 @bp.route('/callback')
 def callback():
-    """Logs users in after they are authenticated by Auth0."""
+    """Executes authorization after users are authticated by Auth0.
+
+    Returns:
+        Redirect to the location specified in session.get('next_page').
+
+    Aborts:
+        404 Not Found: A status code aborted if users hard code the callback url.
+    """
+
     client_secret = current_app.config['AUTH0_CLIENT_SECRET']
     auth0 = configure_oauth(client_secret)
 
     # Hard coding callback route in browser would result in various exceptions. In this
     # case an Unauthorized error with 404 status code would be more appropriate,
     # because only Auth0 is authorized to access this callback route, this route should
-    # not be accessible by users.
+    # not be accessed directly by users.
     try:
         auth0.authorize_access_token()
     except Exception:
@@ -28,7 +43,6 @@ def callback():
 
     sub = userinfo['sub']
     user = User.query.filter_by(sub=sub).first()
-    # insert user into table if not exist
     if not user:
         user = User(
             sub=sub,
@@ -47,8 +61,12 @@ def callback():
 
 @bp.route('/login')
 def login():
-    """Redirects to Auth0's login page."""
-    # redirect user back to index page if they are already logged in
+    """Initializes Auth0 authentification.
+
+    Returns:
+        Redirect to Auth0's login page.
+    """
+
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
@@ -70,7 +88,13 @@ def login():
 
 @bp.route('/logout')
 def logout():
-    """Logs user out both from the issue tracker and auth0."""
+    """Logs user out both from the web app and Auth0.
+
+    Returns:
+        Redirect to Auth0's logout page. Auth0 would redirect user back to login view
+        after log out.
+    """
+
     # Redirect users to login page if they are not authenticated. Use this instead of
     # @login_required, so users would not be redirected back to logout view after
     # authentification.
@@ -90,7 +114,7 @@ def logout():
 
 @bp.route('/test/login', methods=['POST'])
 def _login():
-    """This view is only for testing."""
+    """Logs test user in."""
     if current_app.config['TESTING']:
         user_id = request.form['id']
         user = User.query.get(user_id)

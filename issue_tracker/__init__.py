@@ -7,13 +7,13 @@ from flask_migrate import Migrate
 from issue_tracker import auth
 from issue_tracker import dashboard
 from issue_tracker import errors
-from issue_tracker.models import db, login
+from issue_tracker.login import login
+from issue_tracker.models import db
 from issue_tracker.oauth import oauth
 
 
 def create_app(test_config=None):
     """Creates a flask instance and declares extensions and blueprints."""
-    # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
@@ -24,9 +24,7 @@ def create_app(test_config=None):
         REMEMBER_COOKIE_DURATION=timedelta(days=3, hours=1),
     )
 
-    # load the instance config
     app.config.from_pyfile('config.py', silent=True)
-    # if testing, add test configurations
     if test_config:
         app.config.from_mapping(test_config)
 
@@ -36,13 +34,11 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # initialize extension objects with app
     db.init_app(app)
     login.init_app(app)
     Migrate(app, db)
     oauth.init_app(app)
 
-    # register blueprints
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
     app.add_url_rule('/dashboard', endpoint='index')
@@ -51,12 +47,12 @@ def create_app(test_config=None):
     @app.route('/')
     @app.route('/index')
     def index():
-        """Redirects user to /dashboard route."""
+        """Redirects user to dashboard view."""
         return redirect(url_for('dashboard.dashboard'))
 
-    # shell context for debugging
     @app.shell_context_processor
     def make_shell_context():
+        """Defines shell context for debugging."""
         from issue_tracker.models import Project, Role, User, UserProject
 
         return {

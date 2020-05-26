@@ -1,4 +1,6 @@
-from issue_tracker.models import Role
+from issue_tracker.models import Permission, Role
+
+# TODO: add tests
 
 
 def test_insert_roles(app):
@@ -15,3 +17,15 @@ def test_insert_roles(app):
     assert Role.query.count() == 3
     role_ids = [role.id for role in Role.query.all()]
     assert 1 in role_ids and 2 in role_ids and 3 in role_ids
+
+
+def test_has_permission(app):
+    admin_role = Role.query.get(1)
+    assert admin_role.has_permission(Permission.UPDATE_PROJECT)
+    assert admin_role.has_permission(Permission.DELETE_PROJECT)
+    assert admin_role.has_permission(Permission.INVITE_MEMBER)
+
+    reviewer_role = Role.query.get(2)
+    assert not reviewer_role.has_permission(Permission.UPDATE_PROJECT)
+    assert not reviewer_role.has_permission(Permission.DELETE_PROJECT)
+    assert not reviewer_role.has_permission(Permission.INVITE_MEMBER)

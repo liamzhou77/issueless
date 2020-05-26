@@ -1,13 +1,13 @@
+"""Defines all SqlAlchemy models."""
+
 from hashlib import md5
 
-from flask_login import LoginManager, UserMixin
+from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # Initialize extensions
 db = SQLAlchemy()
-login = LoginManager()
-login.login_view = 'auth.login'
 
 
 class User(UserMixin, db.Model):
@@ -53,7 +53,12 @@ class UserProject(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
 
     user = db.relationship('User', backref=db.backref('user_projects', lazy='dynamic'))
-    project = db.relationship('Project')
+    project = db.relationship(
+        'Project',
+        backref=db.backref(
+            'user_projects', lazy='dynamic', cascade='all, delete-orphan'
+        ),
+    )
 
     def __init__(self, user, project, role=None):
         self.user = user
@@ -63,10 +68,11 @@ class UserProject(db.Model):
     def __repr__(self):
         return f'< User {self.user_id}, Project {self.project_id}, Role {self.role} >'
 
+    def can(self, permission):
+        return self.role and self.role.has_permission(permission)
+
 
 class Project(db.Model):
-    """Represents projects table."""
-
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -76,18 +82,9 @@ class Project(db.Model):
     def __repr__(self):
         return f'< Project {self.id}, {self.title} >'
 
-    def insert(self):
-        """Inserts project into projects table."""
-        db.session.add(self)
-        db.session.commit()
-
     def delete(self):
-        """Deletes project from projects table."""
+        """Deletes the input project."""
         db.session.delete(self)
-        db.session.commit()
-
-    def update(self):
-        """Updates project info."""
         db.session.commit()
 
 
@@ -98,9 +95,9 @@ class Permission(object):
     way makes all possible combinations of permissions have different values.
     """
 
-    update_project = 1
-    delete_project = 2
-    invite_member = 4
+    UPDATE_PROJECT = 1
+    DELETE_PROJECT = 2
+    INVITE_MEMBER = 4
 
 
 class Role(db.Model):
@@ -140,9 +137,9 @@ class Role(db.Model):
         """Inserts roles into databse with their specific permissions."""
         role_permissions = {
             'Admin': [
-                Permission.update_project,
-                Permission.delete_project,
-                Permission.invite_member,
+                Permission.UPDATE_PROJECT,
+                Permission.DELETE_PROJECT,
+                Permission.INVITE_MEMBER,
             ],
             'Reviewer': [],
             'Developer': [],
@@ -160,9 +157,3 @@ class Role(db.Model):
                 role
             )  # will be ignored if the role is already in the database
         db.session.commit()
-
-
-@login.user_loader
-def load_user(user_id):
-    """Reloads the user object from the user ID stored in the session."""
-    return User.query.get(user_id)

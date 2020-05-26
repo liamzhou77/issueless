@@ -1,8 +1,16 @@
+"""All views for dashboard.
+
+  Typical usage example:
+
+  from dashboard import views
+"""
+
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from issue_tracker.dashboard import bp
-from issue_tracker.models import Project
+from issue_tracker.decorators import permission_required
+from issue_tracker.models import Permission, Project
 
 
 @bp.route('/dashboard')
@@ -15,10 +23,19 @@ def dashboard():
     )
 
 
-@bp.route('/projects', methods=['POST'])
+@bp.route('/projects/create', methods=['POST'])
 @login_required
-def projects():
-    """Creates a new project."""
+def create_project():
+    """Creates a new project.
+
+    Form Data:
+        title: A project's title.
+        description: A project's description.
+
+    Returns:
+        Redirect to dashboard view.
+    """
+
     # Each user can only create 4 projects at most. If the limit has already been
     # arrived, redirect user to dashboard with an error message
     project_count = current_user.user_projects.count()
@@ -47,4 +64,22 @@ def projects():
 
     project = Project(title=title, description=description)
     current_user.insert_project(project, 'Admin')
+    return redirect(url_for('index'))
+
+
+@bp.route('/projects/<int:id>/delete', methods=['POST'])
+@login_required
+@permission_required(Permission.DELETE_PROJECT)
+def delete_project(id):
+    """Deletes a project.
+
+    Args:
+        id: The id of the project to be deleted, passed from a section of url.
+
+    Returns:
+        Redirect to dashboard view.
+    """
+
+    project = Project.query.get(id)
+    project.delete()
     return redirect(url_for('index'))
