@@ -10,13 +10,13 @@ def test_directly_call_callback(client):
 def test_login_redirect(client, auth):
     with client:
         client.get('/auth/login')
-        assert session['next_page'] == '/dashboard'
+        assert session['next_page'] == '/'
         client.get('/auth/login?next=')
-        assert session['next_page'] == '/dashboard'
+        assert session['next_page'] == '/'
 
     auth.login()
     rsp = client.get('/auth/login')
-    assert 'http://localhost/dashboard' == rsp.headers['Location']
+    assert 'http://localhost/' == rsp.headers['Location']
 
 
 def test_logout_if_not_login(client):

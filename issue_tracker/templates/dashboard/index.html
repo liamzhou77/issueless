@@ -16,7 +16,7 @@
             <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project_id }}" data-title="{{ project_title }}" data-description="{{ project_description }}">
               Edit
             </button>
-            <form action="{{ url_for('dashboard.delete_project', id=project_id) }}" method="post">
+            <form action="{{ url_for('projects.delete', id=project_id) }}" method="post">
               <!-- Delete Project Button -->
               <button type="submit">delete</button>
             </form>

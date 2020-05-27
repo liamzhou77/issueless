@@ -7,6 +7,7 @@ from flask_migrate import Migrate
 from issue_tracker import auth
 from issue_tracker import dashboard
 from issue_tracker import errors
+from issue_tracker import projects
 from issue_tracker.login import login
 from issue_tracker.models import db
 from issue_tracker.oauth import oauth
@@ -41,14 +42,9 @@ def create_app(test_config=None):
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
-    app.add_url_rule('/dashboard', endpoint='index')
+    app.add_url_rule('/', endpoint='index')
     app.register_blueprint(errors.bp)
-
-    @app.route('/')
-    @app.route('/index')
-    def index():
-        """Redirects user to dashboard view."""
-        return redirect(url_for('dashboard.dashboard'))
+    app.register_blueprint(projects.bp)
 
     @app.shell_context_processor
     def make_shell_context():
