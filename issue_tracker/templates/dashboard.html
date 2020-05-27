@@ -3,14 +3,21 @@
 {% block content %}
   <div class="card text-white bg-dark mb-3" style="max-width: 18rem;">
     <div class="card-header">Projects</div>
-    <ul class="list-group list-group-flush">
+    <ul id="project-list" class="list-group list-group-flush">
       {% for user_project in user_projects %}
-        {% set title = user_project.project.title %}
+        {% set project_id = user_project.project_id %}
+        {% set project_title = user_project.project.title %}
+        {% set project_description = user_project.project.description %}
         {% set role = user_project.role.name %}
         <li class="list-group-item p-3 mb-2 bg-light text-dark">
-          {{ title }}---{{ role }}
+          {{ project_title }}---{{ role }}
           {% if role == 'Admin' %}
-            <form action="{{ url_for('dashboard.delete_project', id=user_project.project_id) }}" method="post">
+            <!-- Edit Project Button -->
+            <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project_id }}" data-title="{{ project_title }}" data-description="{{ project_description }}">
+              Edit
+            </button>
+            <form action="{{ url_for('dashboard.delete_project', id=project_id) }}" method="post">
+              <!-- Delete Project Button -->
               <button type="submit">delete</button>
             </form>
           {% endif %}
@@ -19,21 +26,21 @@
     </ul>
   </div>
   <!-- New Project Button -->
-  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#staticBackdrop">
+  <button type="button" id="create-project-btn" class="btn btn-primary" data-toggle="modal" data-target="#projectModal">
     Create New Project
   </button>
-  <!-- New Project Modal -->
-  <div class="modal fade" id="staticBackdrop" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <!-- Project Modal -->
+  <div class="modal fade" id="projectModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="projectModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="staticBackdropLabel">New Project</h5>
+          <h5 class="modal-title" id="projectModalLabel">New Project</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
-          <form id="project-form" class="needs-validation" action="{{ url_for('dashboard.create_project') }}" method="post" novalidate>
+          <form id="project-form" class="needs-validation" method="post" novalidate>
             <div class="form-group">
               <label for="project-title">Title</label>
               <input name="title" type="text" class="form-control" id="project-title" maxlength=50 placeholder="your project's title" required>
@@ -60,5 +67,6 @@
 {% endblock %} 
 
 {% block scripts %}
+  <script src="{{ url_for('static', filename='events.js') }}"></script>
   <script src="{{ url_for('static', filename='submission.js') }}"></script>
 {% endblock %}

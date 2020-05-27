@@ -33,7 +33,7 @@ def permission_required(permission):
                 abort(404)
             if not user_project.can(permission):
                 abort(403)
-            return f(id, *args, **kwargs)
+            return f(user_project.project, *args, **kwargs)
 
         return wrapper
 

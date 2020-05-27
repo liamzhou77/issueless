@@ -25,7 +25,7 @@ def test_dashboard_projects_section(client, auth):
     assert b'delete' in rsp.data
 
 
-def test_post_project_with_invalid_data(client, auth):
+def test_create_project_with_invalid_data(client, auth):
     auth.login()
 
     rsp = client.post(
@@ -65,7 +65,7 @@ def test_post_project_with_invalid_data(client, auth):
     assert b'description can not be more than 200 characters.' in rsp.data
 
 
-def test_post_project_with_valid_data(client, auth):
+def test_create_project_with_valid_data(client, auth):
     auth.login()
     rsp = client.post(
         '/projects/create',
@@ -104,3 +104,59 @@ def test_delete_project(client, auth):
     rsp = client.post('/projects/1/delete')
     assert 'http://localhost/dashboard' == rsp.headers['Location']
     assert not Project.query.get(1)
+
+
+def test_update_project_with_invalid_data(client, auth):
+    auth.login()
+
+    rsp = client.post(
+        '/projects/1/update',
+        data={'title': '', 'description': ''},
+        follow_redirects=True,
+    )
+    assert b'title is required.' in rsp.data
+
+    rsp = client.post(
+        '/projects/1/update',
+        data={'title': 'test_title', 'description': ''},
+        follow_redirects=True,
+    )
+    assert b'description is required.' in rsp.data
+
+    rsp = client.post(
+        '/projects/1/update',
+        data={
+            'title': 'This is a title with more than 50 characters...........',
+            'description': 'awds',
+        },
+        follow_redirects=True,
+    )
+    assert b'title can not be more than 50 character.' in rsp.data
+
+    rsp = client.post(
+        '/projects/1/update',
+        data={
+            'title': 'awdsad.',
+            'description': (
+                'This is a description with more than 200 characters...................'
+                '......................................................................'
+                '......................................................................'
+            ),
+        },
+        follow_redirects=True,
+    )
+    assert b'description can not be more than 200 characters.' in rsp.data
+
+
+def test_update_project_with_valid_data(client, auth):
+    auth.login()
+
+    rsp = client.post(
+        '/projects/1/update',
+        data={'title': 'modified_title', 'description': 'modified_description'},
+    )
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
+
+    project = Project.query.get(1)
+    assert 'modified_title' == project.title
+    assert 'modified_description' == project.description

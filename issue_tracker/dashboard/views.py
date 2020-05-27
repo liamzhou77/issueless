@@ -48,16 +48,7 @@ def create_project():
 
     title = request.form.get('title')
     description = request.form.get('description')
-    # add verification for post data in server side just for safety
-    error = None
-    if not title:
-        error = "Project's title is required."
-    elif len(title) > 50:
-        error = "Project's title can not be more than 50 character."
-    elif not description:
-        error = "Project's description is required."
-    elif len(description) > 200:
-        error = "Project's description can not be more than 200 characters."
+    error = _project_validation(title, description)
     if error:
         flash(error)
         return redirect(url_for('index'))
@@ -70,16 +61,60 @@ def create_project():
 @bp.route('/projects/<int:id>/delete', methods=['POST'])
 @login_required
 @permission_required(Permission.DELETE_PROJECT)
-def delete_project(id):
+def delete_project(project):
     """Deletes a project.
 
     Args:
-        id: The id of the project to be deleted, passed from a section of url.
+        project: A project object returned from permission_required decorator, whose id
+        is the same as the one in the url.
 
     Returns:
         Redirect to dashboard view.
     """
 
-    project = Project.query.get(id)
     project.delete()
     return redirect(url_for('index'))
+
+
+@bp.route('/projects/<int:id>/update', methods=['POST'])
+@login_required
+@permission_required(Permission.UPDATE_PROJECT)
+def update_project(project):
+    """Updates a project's information.
+
+    Args:
+        project: A project object returned from permission_required decorator, whose id
+        is the same as the one in the url.
+
+    Returns:
+        Redirect to dashboard view.
+    """
+    title = request.form.get('title')
+    description = request.form.get('description')
+    error = _project_validation(title, description)
+    if error:
+        flash(error)
+        return redirect(url_for('index'))
+
+    project.title = title
+    project.description = description
+    project.update()
+    return redirect(url_for('index'))
+
+
+def _project_validation(title, description):
+    """Checks if a project's title and description are valid.
+
+    Returns:
+        An error message, None if there is no error.
+    """
+    error = None
+    if not title:
+        error = "Project's title is required."
+    elif len(title) > 50:
+        error = "Project's title can not be more than 50 character."
+    elif not description:
+        error = "Project's description is required."
+    elif len(description) > 200:
+        error = "Project's description can not be more than 200 characters."
+    return error

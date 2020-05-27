@@ -87,6 +87,10 @@ class Project(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    def update(self):
+        """Updates the input project."""
+        db.session.commit()
+
 
 class Permission(object):
     """An object representation for permissions.
