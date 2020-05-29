@@ -10,7 +10,7 @@
         {% set project_description = user_project.project.description %}
         {% set role = user_project.role.name %}
         <li class="list-group-item p-3 mb-2 bg-light text-dark">
-          {{ project_title }}---{{ role }}
+          <a href="{{ url_for('projects.project', id=project_id) }}">{{ project_title }}---{{ role }}</a>
           {% if role == 'Admin' %}
             <!-- Edit Project Button -->
             <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project_id }}" data-title="{{ project_title }}" data-description="{{ project_description }}">

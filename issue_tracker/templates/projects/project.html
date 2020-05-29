@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>{{ project.title }}</h1>
+  <p>{{ project.description }}</p>
+  {% if role == 'Admin' %}
+    <form id="invitation-form" action="{{ url_for('projects.project', id=project.id) }}" method="post" novalidate>
+      {{ invitation_form.hidden_tag() }}
+      {{ invitation_form.email.label }}
+      {{ invitation_form.email(placeholder='email') }}
+      {% for error in invitation_form.email.errors %}
+        <span style="color: red;">{{ error }}</span>
+      {% endfor %}
+    </form>
+    <button type="submit" class="btn btn-primary" form="invitation-form">Invite</button>
+  {% endif %}
+{% endblock %}

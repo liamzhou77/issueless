@@ -1,9 +1,29 @@
-from flask import flash, redirect, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from issue_tracker.decorators import permission_required
 from issue_tracker.models import Permission, Project
 from issue_tracker.projects import bp
+from issue_tracker.projects.forms import InvitationForm
+
+
+@bp.route('/<int:id>', methods=['GET', 'POST'])
+@login_required
+@permission_required(Permission.READ_PROJECT)
+def project(user_project):
+    project = user_project.project
+    invitation_form = InvitationForm()
+
+    if invitation_form.validate_on_submit():
+        pass
+
+    return render_template(
+        'projects/project.html',
+        title=project.title,
+        project=project,
+        role=user_project.role.name,
+        invitation_form=invitation_form,
+    )
 
 
 @bp.route('/create', methods=['POST'])
@@ -44,12 +64,13 @@ def create():
 @bp.route('/<int:id>/update', methods=['POST'])
 @login_required
 @permission_required(Permission.UPDATE_PROJECT)
-def update(project):
+def update(user_project):
     """Updates a project's information.
 
     Args:
-        project: A project object returned from permission_required decorator, whose id
-        is the same as the one in the url.
+        user_project: A UserProject object returned from permission_required decorator,
+        whose user_id belongs to the current user and project_id is the same as the one
+        in the url.
 
     Returns:
         Redirect to dashboard view.
@@ -61,6 +82,7 @@ def update(project):
         flash(error)
         return redirect(url_for('index'))
 
+    project = user_project.project
     project.title = title
     project.description = description
     project.update()
@@ -70,18 +92,19 @@ def update(project):
 @bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 @permission_required(Permission.DELETE_PROJECT)
-def delete(project):
+def delete(user_project):
     """Deletes a project.
 
     Args:
-        project: A project object returned from permission_required decorator, whose id
-        is the same as the one in the url.
+        user_project: A UserProject object returned from permission_required decorator,
+        whose user_id belongs to the current user and project_id is the same as the one
+        in the url.
 
     Returns:
         Redirect to dashboard view.
     """
 
-    project.delete()
+    user_project.project.delete()
     return redirect(url_for('index'))
 
 

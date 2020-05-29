@@ -1,6 +1,8 @@
 """Defines all SqlAlchemy models."""
 
 from hashlib import md5
+import json
+from time import time
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
@@ -99,9 +101,10 @@ class Permission(object):
     way makes all possible combinations of permissions have different values.
     """
 
-    UPDATE_PROJECT = 1
-    DELETE_PROJECT = 2
-    INVITE_MEMBER = 4
+    READ_PROJECT = 1
+    UPDATE_PROJECT = 2
+    DELETE_PROJECT = 4
+    INVITE_MEMBER = 8
 
 
 class Role(db.Model):
@@ -141,12 +144,13 @@ class Role(db.Model):
         """Inserts roles into databse with their specific permissions."""
         role_permissions = {
             'Admin': [
+                Permission.READ_PROJECT,
                 Permission.UPDATE_PROJECT,
                 Permission.DELETE_PROJECT,
                 Permission.INVITE_MEMBER,
             ],
-            'Reviewer': [],
-            'Developer': [],
+            'Reviewer': [Permission.READ_PROJECT],
+            'Developer': [Permission.READ_PROJECT],
         }
         # Update roles' permissions value instead of inserting new records if role
         # already exists.

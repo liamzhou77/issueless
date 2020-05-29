@@ -4,6 +4,7 @@ requires = [
     'flask',
     'authlib',
     'flask-login',
+    'flask-wtf',
     'flask-migrate',
     'flask-sqlalchemy',
     'psycopg2',
