@@ -5,9 +5,8 @@ from flask import Flask
 from flask_migrate import Migrate
 
 from issue_tracker import auth
-from issue_tracker import dashboard
 from issue_tracker import errors
-from issue_tracker import projects
+from issue_tracker import main
 from issue_tracker.login import login
 from issue_tracker.models import db
 from issue_tracker.oauth import oauth
@@ -42,10 +41,9 @@ def create_app(test_config=None):
     oauth.init_app(app)
 
     app.register_blueprint(auth.bp)
-    app.register_blueprint(dashboard.bp)
-    app.add_url_rule('/', endpoint='index')
     app.register_blueprint(errors.bp)
-    app.register_blueprint(projects.bp)
+    app.register_blueprint(main.bp)
+    app.add_url_rule('/', endpoint='index')
 
     @app.shell_context_processor
     def make_shell_context():

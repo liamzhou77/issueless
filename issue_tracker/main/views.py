@@ -1,21 +1,31 @@
-"""All views for projects blueprint.
+"""All views for main blueprint.
 
   Typical usage example:
 
-  from projects import views
+  from main import views
 """
 
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from issue_tracker.decorators import permission_required
+from issue_tracker.main import bp
 from issue_tracker.models import db, Permission, Project, Role, User
-from issue_tracker.projects import bp
-from issue_tracker.projects.forms import InvitationForm
+from issue_tracker.main.forms import InvitationForm
 from issue_tracker.validators import project_validation
 
 
-@bp.route('/<int:id>', methods=['GET', 'POST'])
+@bp.route('/')
+@login_required
+def index():
+    """Renders the dashboard template."""
+    user_projects = current_user.user_projects
+    return render_template(
+        'dashboard/index.html', title='Dashboard', user_projects=user_projects
+    )
+
+
+@bp.route('/projects/<int:id>', methods=['GET', 'POST'])
 @login_required
 @permission_required(Permission.READ_PROJECT)
 def project(user_project):
@@ -35,7 +45,7 @@ def project(user_project):
     if invitation_form.validate_on_submit():
         if project.user_projects.count() >= 30:
             flash('You can only have 30 or less members in one project.')
-            return redirect(url_for('projects.project', id=project.id))
+            return redirect(url_for('main.project', id=project.id))
         invited_email = request.form.get('email')
         role_name = request.form.get('role')
 
@@ -46,7 +56,7 @@ def project(user_project):
         invited_user.add_notification('invitation', data, target_id=project.id)
         db.session.commit()
 
-        return redirect(url_for('projects.project', id=project.id))
+        return redirect(url_for('main.project', id=project.id))
 
     return render_template(
         'projects/project.html',
@@ -57,9 +67,9 @@ def project(user_project):
     )
 
 
-@bp.route('/create', methods=['POST'])
+@bp.route('/projects/create', methods=['POST'])
 @login_required
-def create():
+def create_project():
     """Creates a new project.
 
     Form Data:
@@ -93,10 +103,10 @@ def create():
     return redirect(url_for('index'))
 
 
-@bp.route('/<int:id>/update', methods=['POST'])
+@bp.route('/projects/<int:id>/update', methods=['POST'])
 @login_required
 @permission_required(Permission.UPDATE_PROJECT)
-def update(user_project):
+def update_project(user_project):
     """Updates a project's information.
 
     Args:
@@ -123,10 +133,10 @@ def update(user_project):
     return redirect(url_for('index'))
 
 
-@bp.route('/<int:id>/delete', methods=['POST'])
+@bp.route('/projects/<int:id>/delete', methods=['POST'])
 @login_required
 @permission_required(Permission.DELETE_PROJECT)
-def delete(user_project):
+def delete_project(user_project):
     """Deletes a project.
 
     Args:
