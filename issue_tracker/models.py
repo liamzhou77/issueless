@@ -1,23 +1,22 @@
-"""Defines all SqlAlchemy models."""
+"""Defines all SqlAlchemy models.
 
+  Typical usage example:
+
+  user = User.query.get(1)
+"""
+
+from datetime import datetime
 from hashlib import md5
 import json
-from time import time
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.associationproxy import association_proxy
 
-# Initialize extensions
 db = SQLAlchemy()
 
 
 class User(UserMixin, db.Model):
-    """Represents users table.
-
-    Uses UserMixin to implement flask-login's required items.
-    """
-
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -27,24 +26,58 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(), nullable=False)
 
     projects = association_proxy('user_projects', 'project')
+    notifications = db.relationship('Notification', backref='user', lazy='dynamic')
 
     def __repr__(self):
         return f'< User {self.id}, {self.first_name} {self.last_name}, {self.email} >'
 
-    def insert(self):
-        """Inserts user into users table."""
-        db.session.add(self)
-        db.session.commit()
+    def add_project(self, project, role_name):
+        """Adds the input project with input role under current user.
 
-    def insert_project(self, project, role):
-        """Inserts the input project with input role under current user."""
-        r = Role.query.filter_by(name=role).first()
-        r.user_projects.append(UserProject(self, project))
-        db.session.commit()
+        Args:
+            project: A project to be added.
+            role_name: A role's name the user should have in project.
+        """
+
+        role = Role.query.filter_by(name=role_name).first()
+        new_user_project = UserProject(user=self, project=project, role=role)
+        db.session.add(new_user_project)
 
     def avatar(self, size):
+        """Generates the avatar link for user.
+
+        Args:
+            size: A number indicating the size of the avatar.
+
+        Returns:
+            A string of the avatar url.
+        """
+
         digest = md5(self.email.lower().encode()).hexdigest()
         return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
+
+    def add_notification(self, name, data, target_id=None):
+        """Adds a new notification.
+
+        Args:
+            name: A notification's name to be added.
+            data: A notification data to be added.
+            target_id: An id representing what instance is Notification about.
+        """
+
+        if name == 'invitation':
+            notification = self.notifications.filter(
+                Notification.name == name, Notification.target_id == target_id
+            ).first()
+            # If user has already received the invitation, delete it before
+            # replacing it with the new one.
+            if notification:
+                db.session.delete(notification)
+
+            new_notification = Notification(
+                name=name, payload_json=json.dumps(data), target_id=target_id, user=self
+            )
+            db.session.add(new_notification)
 
 
 class UserProject(db.Model):
@@ -54,18 +87,18 @@ class UserProject(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
 
-    user = db.relationship('User', backref=db.backref('user_projects', lazy='dynamic'))
+    user = db.relationship(
+        'User',
+        backref=db.backref(
+            'user_projects', lazy='dynamic', cascade='all, delete-orphan'
+        ),
+    )
     project = db.relationship(
         'Project',
         backref=db.backref(
             'user_projects', lazy='dynamic', cascade='all, delete-orphan'
         ),
     )
-
-    def __init__(self, user, project, role=None):
-        self.user = user
-        self.project = project
-        self.role = role
 
     def __repr__(self):
         return f'< User {self.user_id}, Project {self.project_id}, Role {self.role} >'
@@ -81,17 +114,10 @@ class Project(db.Model):
     title = db.Column(db.String(), index=True, nullable=False)
     description = db.Column(db.String(), nullable=False)
 
+    users = association_proxy('user_projects', 'user')
+
     def __repr__(self):
         return f'< Project {self.id}, {self.title} >'
-
-    def delete(self):
-        """Deletes the input project."""
-        db.session.delete(self)
-        db.session.commit()
-
-    def update(self):
-        """Updates the input project."""
-        db.session.commit()
 
 
 class Permission(object):
@@ -120,23 +146,19 @@ class Role(db.Model):
         return f'< Role {self.id}, {self.name}, {self.permissions} >'
 
     def has_permission(self, permission):
-        """Checks if the self role has the input permission."""
         return (
             self.permissions & permission == permission
         )  # use bitwise and to check if permission exists
 
     def add_permission(self, permission):
-        """Adds the input permission if it does not exist in the self role."""
         if not self.has_permission(permission):
             self.permissions += permission
 
     def remove_permission(self, permission):
-        """Removes the input permission if it exists in the self role."""
         if self.has_permission(permission):
             self.permissions -= permission
 
     def reset_permissions(self):
-        """Sets the self role's permission value to 0."""
         self.permissions = 0
 
     @staticmethod
@@ -152,6 +174,7 @@ class Role(db.Model):
             'Reviewer': [Permission.READ_PROJECT],
             'Developer': [Permission.READ_PROJECT],
         }
+
         # Update roles' permissions value instead of inserting new records if role
         # already exists.
         for r, permissions in role_permissions.items():
@@ -165,3 +188,21 @@ class Role(db.Model):
                 role
             )  # will be ignored if the role is already in the database
         db.session.commit()
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(), index=True, nullable=False)
+    target_id = db.Column(
+        db.Integer
+    )  # Representing what instance is the notification about
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    timestamp = db.Column(
+        db.DateTime, index=True, default=datetime.utcnow, nullable=False
+    )
+    payload_json = db.Column(db.Text)
+
+    def get_data(self):
+        return json.loads(str(self.payload_json))

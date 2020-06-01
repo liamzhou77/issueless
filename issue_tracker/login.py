@@ -3,7 +3,9 @@ from flask_login import LoginManager
 from issue_tracker.models import User
 
 login = LoginManager()
+
 login.login_view = 'auth.login'
+login.login_message = None
 
 
 @login.user_loader

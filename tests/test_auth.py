@@ -1,22 +1,7 @@
-from flask import session
-
-
 def test_directly_call_callback(client):
     rsp = client.get('/auth/callback')
     assert rsp.status_code == 404
     assert b'Not Found' in rsp.data
-
-
-def test_login_redirect(client, auth):
-    with client:
-        client.get('/auth/login')
-        assert session['next_page'] == '/'
-        client.get('/auth/login?next=')
-        assert session['next_page'] == '/'
-
-    auth.login()
-    rsp = client.get('/auth/login')
-    assert 'http://localhost/' == rsp.headers['Location']
 
 
 def test_logout_if_not_login(client):

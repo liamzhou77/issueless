@@ -1,4 +1,4 @@
-"""All handlers for errors.
+"""All handlers for errors blueprint.
 
   Typical usage example:
 

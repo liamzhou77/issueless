@@ -1,4 +1,4 @@
-"""All views for authorization.
+"""All views for auth blueprint.
 
   Typical usage example:
 
@@ -8,31 +8,30 @@
 from flask import abort, current_app, redirect, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from six.moves.urllib.parse import urlencode
-from werkzeug.urls import url_parse
 
 from issue_tracker.auth import bp
-from issue_tracker.models import User
+from issue_tracker.models import db, User
 from issue_tracker.oauth import configure_oauth
 
 
 @bp.route('/callback')
 def callback():
-    """Executes authorization after users are authticated by Auth0.
+    """Executes authorization after user is authticated by Auth0.
 
     Returns:
-        Redirect to the location specified in session.get('next_page').
+        Redirect to the location specified in session key 'next'
 
     Aborts:
-        404 Not Found: A status code aborted if users hard code the callback url.
+        404 Not Found: A status code aborted if user hard codes the callback url.
     """
 
     client_secret = current_app.config['AUTH0_CLIENT_SECRET']
     auth0 = configure_oauth(client_secret)
 
     # Hard coding callback route in browser would result in various exceptions. In this
-    # case an Unauthorized error with 404 status code would be more appropriate,
-    # because only Auth0 is authorized to access this callback route, this route should
-    # not be accessed directly by users.
+    # case, a 404 Not Found status code would be more appropriate because only Auth0 is
+    # authorized to access this callback route, this route should not be visible to
+    # user.
     try:
         auth0.authorize_access_token()
     except Exception:
@@ -43,6 +42,7 @@ def callback():
 
     sub = userinfo['sub']
     user = User.query.filter_by(sub=sub).first()
+
     if not user:
         user = User(
             sub=sub,
@@ -50,12 +50,14 @@ def callback():
             first_name=userinfo['given_name'],
             last_name=userinfo['family_name'],
         )
-        user.insert()
+        db.session.add(user)
+        db.session.commit()
+
     login_user(user, remember=True)
 
-    next_page = session.get('next_page')
-    session.pop('next_page')
-
+    next_page = session.pop('next', None)
+    if not next_page:
+        next_page = url_for('index')
     return redirect(next_page)
 
 
@@ -72,14 +74,6 @@ def login():
 
     client_secret = current_app.config['AUTH0_CLIENT_SECRET']
     auth0 = configure_oauth(client_secret)
-
-    # Store 'next' url parameter in session if it exists, so the callback view can
-    # redirect users back to where they were.
-    next_page = request.args.get('next')
-    if not next_page or url_parse(next_page).netloc != '':
-        next_page = url_for('index')
-    session['next_page'] = next_page
-
     return auth0.authorize_redirect(
         redirect_uri=request.url_root
         + url_for('auth.callback')[1:]  # generate the callback url
@@ -88,11 +82,13 @@ def login():
 
 @bp.route('/logout')
 def logout():
-    """Logs user out both from the web app and Auth0.
+    """Logs user out from the web app and Auth0.
+
+    Logs user out from flask_login and Auth0. Auth0 would redirect user back to the
+    login view after log out.
 
     Returns:
-        Redirect to Auth0's logout page. Auth0 would redirect user back to login view
-        after log out.
+        Redirect to Auth0's logout page.
     """
 
     # Redirect users to login page if they are not authenticated. Use this instead of

@@ -1,4 +1,4 @@
-from issue_tracker.models import Project, User, UserProject
+from issue_tracker.models import db, Notification, Project, User, UserProject
 
 
 def test_create_project_with_invalid_data(client, auth):
@@ -136,3 +136,69 @@ def test_update_project_with_valid_data(client, auth):
     project = Project.query.get(1)
     assert 'modified_title' == project.title
     assert 'modified_description' == project.description
+
+
+def test_invitation_with_invalid_data(client, auth):
+    auth.login()
+
+    rsp = client.post('/projects/1', data={'email': '', 'role': ''})
+    assert (
+        b'Please enter an email address.' in rsp.data
+        and b'Not a valid choice' in rsp.data
+    )
+
+    rsp = client.post('/projects/1', data={'email': 'test3', 'role': 'Developer'})
+    assert b'Please enter a valid email address.' in rsp.data
+
+    rsp = client.post(
+        '/projects/1', data={'email': 'test4@gmail.com', 'role': 'Developer'}
+    )
+    assert b'Unknown email address. Please try again.' in rsp.data
+
+    rsp = client.post(
+        '/projects/1', data={'email': 'test1@gmail.com', 'role': 'Developer'}
+    )
+    assert b'You can not invite yourself to your project.' in rsp.data
+
+    rsp = client.post(
+        '/projects/1', data={'email': 'test2@gmail.com', 'role': 'Developer'}
+    )
+    assert b'User is already a member of the project.' in rsp.data
+
+
+def test_invitation_with_valid_data(client, auth):
+    auth.login()
+
+    rsp = client.post(
+        '/projects/1', data={'email': 'test3@gmail.com', 'role': 'Developer'}
+    )
+    assert 'http://localhost/projects/1' == rsp.headers['Location']
+
+    assert Notification.query.count() == 1
+    notification = Notification.query.first()
+    assert notification.name == 'invitation'
+    assert notification.target_id == 1
+    assert notification.user_id == 3
+    assert notification.get_data() == 3
+
+    project = Project.query.get(1)
+    for num in range(4, 32):
+        user = User(
+            sub=f'test_sub_{num}',
+            email=f'test{num}@gmail.com',
+            first_name=f'test_first_name_{num}',
+            last_name=f'test_last_name_{num}',
+        )
+        db.session.add(user)
+        user.add_project(project, 'Developer')
+    db.session.commit()
+
+    assert project.user_projects.count() == 30
+
+    rsp = client.post(
+        '/projects/1',
+        data={'email': 'test3@gmail.com', 'role': 'Developer'},
+        follow_redirects=True,
+    )
+    assert b'You can only have 30 or less members in one project.' in rsp.data
+    assert project.user_projects.count() == 30

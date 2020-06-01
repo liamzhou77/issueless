@@ -1,4 +1,4 @@
-"""All views for dashboard.
+"""All views for dashboard blueprint.
 
   Typical usage example:
 

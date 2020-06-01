@@ -5,5 +5,4 @@ def test_permission_required(client, auth):
     assert 'http://localhost/' == rsp.headers['Location']
 
     assert client.post('/projects/2/delete').status_code == 403
-
     assert client.post('/projects/4/delete').status_code == 404

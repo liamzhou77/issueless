@@ -3,19 +3,19 @@ INSERT INTO
 VALUES
   (
     'test_sub_1',
-    'test_email_1',
+    'test1@gmail.com',
     'test_first_name_1',
     'test_last_name_1'
   ),
   (
     'test_sub_2',
-    'test_email_2',
+    'test2@gmail.com',
     'test_first_name_2',
     'test_last_name_2'
   ),
   (
     'test_sub_3',
-    'test_email_3',
+    'test3@gmail.com',
     'test_first_name_3',
     'test_last_name_3'
   );
@@ -32,4 +32,5 @@ INSERT INTO
 VALUES
   (1, 1, 1),
   (1, 2, 2),
-  (1, 3, 3);
+  (1, 3, 3),
+  (2, 1, 2);
