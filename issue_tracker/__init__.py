@@ -43,7 +43,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
     app.register_blueprint(errors.bp)
     app.register_blueprint(main.bp)
-    app.add_url_rule('/', endpoint='index')
+    app.add_url_rule('/dashboard', endpoint='index')
 
     @app.shell_context_processor
     def make_shell_context():

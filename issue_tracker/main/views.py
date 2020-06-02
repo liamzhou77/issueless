@@ -5,23 +5,30 @@
   from main import views
 """
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from issue_tracker.decorators import permission_required
 from issue_tracker.main import bp
-from issue_tracker.models import db, Permission, Project, Role, User
 from issue_tracker.main.forms import InvitationForm
+from issue_tracker.models import db, Notification, Permission, Project, User
 from issue_tracker.validators import project_validation
+from werkzeug.urls import url_parse
 
 
 @bp.route('/')
-@login_required
 def index():
+    "Redirects to dashboard view."
+    return redirect(url_for('main.dashboard'))
+
+
+@bp.route('/dashboard')
+@login_required
+def dashboard():
     """Renders the dashboard template."""
     user_projects = current_user.user_projects
     return render_template(
-        'dashboard/index.html', title='Dashboard', user_projects=user_projects
+        'dashboard.html', title='Dashboard', user_projects=user_projects
     )
 
 
@@ -46,20 +53,24 @@ def project(user_project):
         if project.user_projects.count() >= 30:
             flash('You can only have 30 or less members in one project.')
             return redirect(url_for('main.project', id=project.id))
+
         invited_email = request.form.get('email')
         role_name = request.form.get('role')
 
         invited_user = User.query.filter_by(email=invited_email).first()
-        role = Role.query.filter_by(name=role_name).first()
 
-        data = role.id
+        data = {
+            'invitor_name': f'{current_user.first_name} {current_user.last_name}',
+            'project_title': project.title,
+            'role_name': role_name,
+        }
         invited_user.add_notification('invitation', data, target_id=project.id)
         db.session.commit()
 
         return redirect(url_for('main.project', id=project.id))
 
     return render_template(
-        'projects/project.html',
+        'project.html',
         title=project.title,
         project=project,
         role=user_project.role.name,
@@ -151,3 +162,73 @@ def delete_project(user_project):
     db.session.delete(user_project.project)
     db.session.commit()
     return redirect(url_for('index'))
+
+
+@bp.route('/notifications')
+@login_required
+def notifications():
+    """Returns notifications in json."""
+    notifications = current_user.notifications.order_by(Notification.timestamp.desc())
+    return jsonify(
+        [
+            {
+                'notification_id': n.id,
+                'name': n.name,
+                'target_id': n.target_id,
+                'data': n.get_data(),
+                'timestamp': n.timestamp,
+            }
+            for n in notifications
+        ]
+    )
+
+
+@bp.route('/notifications/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_notification(id):
+    """Deletes a notification.
+
+    Args:
+        id: A notification's id.
+        next: A url parameter indicating what url to be redirected to.
+
+    Aborts:
+        403 Forbidden: A status code aborted if the notification does not belong to
+            current user.
+        404 Not Found: A status code aborted if notification does not exist.
+
+    Returns:
+        Redirect to next
+    """
+
+    notification = get_notification(id)
+    db.session.delete(notification)
+    db.session.commit()
+
+    next_page = request.args.get('next')
+    if not next_page or url_parse(next_page).netloc != '':
+        next_page = url_for('index')
+    return redirect(next_page)
+
+
+def get_notification(id):
+    """Gets a notification.
+
+    Args:
+        id: A notification's id to be queried.
+
+    Aborts:
+        403 Forbidden: A status code aborted if the notification does not belong to
+            current user.
+        404 Not Found: A status code aborted if notification does not exist.
+
+    Returns:
+        A notification whose id is the same as the input id.
+    """
+
+    notification = Notification.query.get(id)
+    if not notification:
+        abort(404)
+    if notification.user_id != current_user.id:
+        abort(403)
+    return notification

@@ -28,9 +28,35 @@ VALUES
   ('test_title_3', 'test_description_3');
 
 INSERT INTO
-  user_project
+  user_project (user_id, project_id, role_id)
 VALUES
   (1, 1, 1),
   (1, 2, 2),
   (1, 3, 3),
-  (2, 1, 2);
+  (2, 1, 2),
+  (2, 2, 1),
+  (3, 3, 1);
+
+INSERT INTO
+  notifications (
+    name,
+    target_id,
+    user_id,
+    timestamp,
+    payload_json
+  )
+VALUES
+  (
+    'invitation',
+    2,
+    3,
+    '2020-06-02 05:59:22.344978',
+    '{"invitor_name": "test_first_name_2 test_last_name_2", "project_title": "test_title_2", "role_name": "Developer"}'
+  ),
+  (
+    'invitation',
+    3,
+    2,
+    '2020-06-02 05:59:22.344978',
+    '{"invitor_name": "test_first_name_3 test_last_name_3", "project_title": "test_title_3", "role_name": "Developer"}'
+  );

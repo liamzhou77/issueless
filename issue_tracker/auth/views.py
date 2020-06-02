@@ -119,3 +119,13 @@ def _login():
         return f'User {user_id} logged in'
     else:
         abort(404)
+
+
+@bp.route('/test/logout', methods=['POST'])
+def _logout():
+    """Logs test user out."""
+    if current_app.config['TESTING']:
+        logout_user()
+        return 'User logged out'
+    else:
+        abort(404)

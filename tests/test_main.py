@@ -1,8 +1,27 @@
 from issue_tracker.models import db, Notification, Project, User, UserProject
 
 
+def test_dashboard(client, auth):
+    auth.login(1)
+    rsp = client.get('/dashboard')
+    assert rsp.status_code == 200
+    assert (
+        b'test_title_1---Admin' in rsp.data
+        and b'test_title_2---Reviewer' in rsp.data
+        and b'test_title_3---Developer' in rsp.data
+    )
+
+    db.session.execute('DELETE FROM user_project where user_id = 1 and project_id = 1;')
+    rsp = client.get('/dashboard')
+    assert b'delete' not in rsp.data
+
+    db.session.execute('INSERT INTO user_project values (1, 1, 1);')
+    rsp = client.get('/dashboard')
+    assert b'delete' in rsp.data
+
+
 def test_create_project_with_invalid_data(client, auth):
-    auth.login()
+    auth.login(1)
 
     rsp = client.post(
         '/projects/create', data={'title': '', 'description': ''}, follow_redirects=True
@@ -42,7 +61,7 @@ def test_create_project_with_invalid_data(client, auth):
 
 
 def test_create_project_with_valid_data(client, auth):
-    auth.login()
+    auth.login(1)
     rsp = client.post(
         '/projects/create',
         data={'title': 'test_title_4', 'description': 'test_description_4'},
@@ -58,7 +77,7 @@ def test_create_project_with_valid_data(client, auth):
     new_project = new_user_project.project
     assert new_project.title == 'test_title_4'
     assert new_project.description == 'test_description_4'
-    assert 'http://localhost/' == rsp.headers['Location']
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
 
     # test add fifth project
     rsp = client.post(
@@ -75,15 +94,15 @@ def test_create_project_with_valid_data(client, auth):
 
 
 def test_delete_project(client, auth):
-    auth.login()
+    auth.login(1)
 
     rsp = client.post('/projects/1/delete')
-    assert 'http://localhost/' == rsp.headers['Location']
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
     assert not Project.query.get(1)
 
 
 def test_update_project_with_invalid_data(client, auth):
-    auth.login()
+    auth.login(1)
 
     rsp = client.post(
         '/projects/1/update',
@@ -125,13 +144,13 @@ def test_update_project_with_invalid_data(client, auth):
 
 
 def test_update_project_with_valid_data(client, auth):
-    auth.login()
+    auth.login(1)
 
     rsp = client.post(
         '/projects/1/update',
         data={'title': 'modified_title', 'description': 'modified_description'},
     )
-    assert 'http://localhost/' == rsp.headers['Location']
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
 
     project = Project.query.get(1)
     assert 'modified_title' == project.title
@@ -139,7 +158,7 @@ def test_update_project_with_valid_data(client, auth):
 
 
 def test_invitation_with_invalid_data(client, auth):
-    auth.login()
+    auth.login(1)
 
     rsp = client.post('/projects/1', data={'email': '', 'role': ''})
     assert (
@@ -167,19 +186,21 @@ def test_invitation_with_invalid_data(client, auth):
 
 
 def test_invitation_with_valid_data(client, auth):
-    auth.login()
+    auth.login(1)
 
     rsp = client.post(
         '/projects/1', data={'email': 'test3@gmail.com', 'role': 'Developer'}
     )
     assert 'http://localhost/projects/1' == rsp.headers['Location']
 
-    assert Notification.query.count() == 1
-    notification = Notification.query.first()
+    notification = Notification.query.get(3)
     assert notification.name == 'invitation'
     assert notification.target_id == 1
     assert notification.user_id == 3
-    assert notification.get_data() == 3
+    data = notification.get_data()
+    assert data['invitor_name'] == 'test_first_name_1 test_last_name_1'
+    assert data['project_title'] == 'test_title_1'
+    assert data['role_name'] == 'Developer'
 
     project = Project.query.get(1)
     for num in range(4, 32):
@@ -202,3 +223,21 @@ def test_invitation_with_valid_data(client, auth):
     )
     assert b'You can only have 30 or less members in one project.' in rsp.data
     assert project.user_projects.count() == 30
+
+
+def test_delete_notification(client, auth):
+    auth.login(3)
+
+    assert client.post('/notifications/2/delete').status_code == 403
+    assert client.post('/notifications/10/delete').status_code == 404
+
+    rsp = client.post('/notifications/1/delete')
+    assert rsp.status_code == 302
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
+
+    auth.logout()
+    auth.login(2)
+
+    rsp = client.post('/notifications/2/delete?next=/projects/2')
+    assert rsp.status_code == 302
+    assert 'http://localhost/projects/2' == rsp.headers['Location']

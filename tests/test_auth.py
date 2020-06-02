@@ -10,7 +10,7 @@ def test_logout_if_not_login(client):
 
 
 def test_logout_if_login(client, auth):
-    auth.login()
+    auth.login(1)
     rsp = client.get('/auth/logout')
     assert rsp.headers['Location'].startswith(
         'https://issue-tracker-7.auth0.com/v2/logout?returnTo='
