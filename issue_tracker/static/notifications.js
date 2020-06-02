@@ -20,9 +20,11 @@ function generate_notifications() {
                 <strong>${invitor_name}</strong> invited you to join <strong>${project_title}</strong> as a <strong>${role_name}</strong>.
                 
                 <form action="/notifications/${notification_id}/delete?next=${window.location.pathname}" method="post">
-                  <button type="submit"">Refuse</button>
+                  <button type="submit">Refuse</button>
                 </form>
-                <button>Accept</button>
+                <form action="/projects/${target_id}/add-member?next=${window.location.pathname}" method="post">
+                  <button type="submit">Accept</button>
+                </form>
               </span>
           `;
         }

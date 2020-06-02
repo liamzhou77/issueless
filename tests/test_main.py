@@ -202,6 +202,11 @@ def test_invitation_with_valid_data(client, auth):
     assert data['project_title'] == 'test_title_1'
     assert data['role_name'] == 'Developer'
 
+    timestamp = notification.timestamp
+    client.post('/projects/1', data={'email': 'test3@gmail.com', 'role': 'Developer'})
+    notification = Notification.query.get(4)
+    assert notification.timestamp > timestamp
+
     project = Project.query.get(1)
     for num in range(4, 32):
         user = User(
@@ -241,3 +246,20 @@ def test_delete_notification(client, auth):
     rsp = client.post('/notifications/2/delete?next=/projects/2')
     assert rsp.status_code == 302
     assert 'http://localhost/projects/2' == rsp.headers['Location']
+
+
+def test_add_member(client, auth):
+    auth.login(3)
+
+    assert client.post('/projects/4/add-member').status_code == 404
+    assert client.post('/projects/1/add-member').status_code == 403
+
+    rsp = client.post('/projects/2/add-member?next=/dashboard')
+    assert rsp.status_code == 302
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
+
+    user_project = UserProject.query.filter_by(user_id=3, project_id=2).first()
+    assert user_project
+    assert user_project.role.name == 'Developer'
+
+    assert not Notification.query.get(1)

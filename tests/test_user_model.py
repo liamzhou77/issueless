@@ -10,7 +10,7 @@ def test_avatar(app):
 
 
 def test_insert_project(app):
-    user = User.query.first()
+    user = User.query.get(1)
     user.add_project(
         Project(title='test_title_4', description='test_description_4'), 'Admin'
     )

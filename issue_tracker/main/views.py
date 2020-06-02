@@ -128,6 +128,7 @@ def update_project(user_project):
     Returns:
         Redirect to dashboard view.
     """
+
     title = request.form.get('title')
     description = request.form.get('description')
 
@@ -164,6 +165,49 @@ def delete_project(user_project):
     return redirect(url_for('index'))
 
 
+@bp.route('/projects/<int:id>/add-member', methods=['POST'])
+@login_required
+def add_member(id):
+    """Adds a new member to the project.
+
+    Args:
+        id: An url parameter indicating the project's id. The project id would never be
+            the same as a project that current user has already joined, because to join
+            the project user must have an invtiation to the project. Invitation would
+            never be sent if the user is already a member of the project.
+        next: A url parameter indicating what url to be redirected to.
+
+    Returns:
+        Redirect to the 'next' url.
+    """
+
+    project = Project.query.get(id)
+    if not project:
+        abort(404)
+
+    notification = current_user.notifications.filter_by(
+        name='invitation', target_id=id
+    ).first()
+    if not notification:
+        abort(403)
+
+    next_page = request.args.get('next')
+    if not next_page or url_parse(next_page).netloc != '':
+        next_page = url_for('index')
+
+    if project.user_projects.count() >= 30:
+        flash('Failed to join the project. The project does not have remaining spots.')
+        return redirect(next_page)
+
+    role_name = notification.get_data()['role_name']
+    current_user.add_project(project, role_name)
+
+    db.session.delete(notification)
+    db.session.commit()
+
+    return redirect(next_page)
+
+
 @bp.route('/notifications')
 @login_required
 def notifications():
@@ -198,7 +242,7 @@ def delete_notification(id):
         404 Not Found: A status code aborted if notification does not exist.
 
     Returns:
-        Redirect to next
+        Redirect to the 'next' url.
     """
 
     notification = get_notification(id)
