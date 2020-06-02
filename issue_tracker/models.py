@@ -74,10 +74,10 @@ class User(UserMixin, db.Model):
             if notification:
                 db.session.delete(notification)
 
-            new_notification = Notification(
-                name=name, payload_json=json.dumps(data), target_id=target_id, user=self
-            )
-            db.session.add(new_notification)
+        new_notification = Notification(
+            name=name, payload_json=json.dumps(data), target_id=target_id, user=self
+        )
+        db.session.add(new_notification)
 
 
 class UserProject(db.Model):

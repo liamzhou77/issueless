@@ -5,29 +5,30 @@ function generate_notifications() {
     .then((rsp) => rsp.json())
     .then((notifications) => {
       let output = '';
+
       notifications.forEach(function (n) {
-        const {
-          notification_id,
-          name,
-          target_id,
-          data: { invitor_name, project_title, role_name },
-          timestamp,
-        } = n;
+        const { notificationId, name, targetId, data, timestamp } = n;
+
+        output += '<span class="dropdown-item">';
 
         if (name === 'invitation') {
+          const { invitorName, projectTitle, roleName } = data;
           output += `
-              <span class="dropdown-item" href="">
-                <strong>${invitor_name}</strong> invited you to join <strong>${project_title}</strong> as a <strong>${role_name}</strong>.
-                
-                <form action="/notifications/${notification_id}/delete?next=${window.location.pathname}" method="post">
-                  <button type="submit">Refuse</button>
-                </form>
-                <form action="/projects/${target_id}/add-member?next=${window.location.pathname}" method="post">
-                  <button type="submit">Accept</button>
-                </form>
-              </span>
+            <strong>${invitorName}</strong> invited you to join <strong>${projectTitle}</strong> as a <strong>${roleName}</strong>.
+            
+            <form action="/notifications/${notificationId}/delete?next=${window.location.pathname}" method="post">
+              <button type="submit">Refuse</button>
+            </form>
+            <form action="/projects/${targetId}/add-member?next=${window.location.pathname}" method="post">
+              <button type="submit">Accept</button>
+            </form>
           `;
+        } else if (name == 'project deleted') {
+          const projectTitle = data.projectTitle;
+          output += `<strong>${projectTitle}</strong> has been deleted.</strong>`;
         }
+        output += '<br>' + moment(timestamp).fromNow();
+        output += '</span>';
       });
       notificationDropdown.innerHTML = output;
     });

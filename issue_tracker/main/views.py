@@ -60,9 +60,9 @@ def project(user_project):
         invited_user = User.query.filter_by(email=invited_email).first()
 
         data = {
-            'invitor_name': f'{current_user.first_name} {current_user.last_name}',
-            'project_title': project.title,
-            'role_name': role_name,
+            'invitorName': f'{current_user.first_name} {current_user.last_name}',
+            'projectTitle': project.title,
+            'roleName': role_name,
         }
         invited_user.add_notification('invitation', data, target_id=project.id)
         db.session.commit()
@@ -94,8 +94,9 @@ def create_project():
     # Each user can create 4 projects at most.
     if current_user.user_projects.count() >= 4:
         flash(
-            'You can not add any more projects, you can only create 4 or less projects.'
-            'Please delete one existing project before you add any more.'
+            'You can not create any more projects, you can only create or join 4 or '
+            'less projects. Please delete or quit one existing project before you add '
+            'any more.'
         )
         return redirect(url_for('index'))
 
@@ -151,6 +152,8 @@ def update_project(user_project):
 def delete_project(user_project):
     """Deletes a project.
 
+    Deletes a project. Add notification to all other members. 
+
     Args:
         user_project: A UserProject object returned from permission_required decorator,
         whose user_id belongs to the current user and project_id is the same as the one
@@ -160,8 +163,16 @@ def delete_project(user_project):
         Redirect to dashboard view.
     """
 
-    db.session.delete(user_project.project)
+    project = user_project.project
+
+    users = project.users
+    for user in users:
+        if user != current_user:
+            user.add_notification('project deleted', {'projectTitle': project.title})
+
+    db.session.delete(project)
     db.session.commit()
+
     return redirect(url_for('index'))
 
 
@@ -195,15 +206,24 @@ def add_member(id):
     if not next_page or url_parse(next_page).netloc != '':
         next_page = url_for('index')
 
-    if project.user_projects.count() >= 30:
-        flash('Failed to join the project. The project does not have remaining spots.')
-        return redirect(next_page)
+    error = None
+    if current_user.user_projects.count() >= 4:
+        error = (
+            'You can not join any more projects, you can only create or join 4 or less '
+            'projects. Please delete or quit one existing project before you add any '
+            'more.'
+        )
+    elif project.user_projects.count() >= 30:
+        error = 'Failed to join the project. The project does not have remaining spots.'
 
-    role_name = notification.get_data()['role_name']
-    current_user.add_project(project, role_name)
+    if not error:
+        role_name = notification.get_data()['roleName']
+        current_user.add_project(project, role_name)
 
-    db.session.delete(notification)
-    db.session.commit()
+        db.session.delete(notification)
+        db.session.commit()
+    else:
+        flash(error)
 
     return redirect(next_page)
 
@@ -216,9 +236,9 @@ def notifications():
     return jsonify(
         [
             {
-                'notification_id': n.id,
+                'notificationId': n.id,
                 'name': n.name,
-                'target_id': n.target_id,
+                'targetId': n.target_id,
                 'data': n.get_data(),
                 'timestamp': n.timestamp,
             }

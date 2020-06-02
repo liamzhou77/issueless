@@ -88,7 +88,7 @@ def test_create_project_with_valid_data(client, auth):
     user_projects = User.query.get(1).user_projects
     assert user_projects.count() == 4
     assert (
-        b'You can not add any more projects, you can only create 4 or less projects.'
+        b'You can not create any more projects, you can only create or join 4 or less projects.'
         in rsp.data
     )
 
@@ -198,9 +198,9 @@ def test_invitation_with_valid_data(client, auth):
     assert notification.target_id == 1
     assert notification.user_id == 3
     data = notification.get_data()
-    assert data['invitor_name'] == 'test_first_name_1 test_last_name_1'
-    assert data['project_title'] == 'test_title_1'
-    assert data['role_name'] == 'Developer'
+    assert data['invitorName'] == 'test_first_name_1 test_last_name_1'
+    assert data['projectTitle'] == 'test_title_1'
+    assert data['roleName'] == 'Developer'
 
     timestamp = notification.timestamp
     client.post('/projects/1', data={'email': 'test3@gmail.com', 'role': 'Developer'})

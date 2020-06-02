@@ -55,7 +55,7 @@ VALUES
     2,
     3,
     '2020-06-02 05:59:22.344978',
-    '{"invitor_name": "test_first_name_2 test_last_name_2", "project_title": "test_title_2", "role_name": "Developer"}'
+    '{"invitorName": "test_first_name_2 test_last_name_2", "projectTitle": "test_title_2", "roleName": "Developer"}'
   ),
   -- User 2 received an invitation to project 3
   (
@@ -63,5 +63,5 @@ VALUES
     3,
     2,
     '2020-06-02 05:59:22.344978',
-    '{"invitor_name": "test_first_name_3 test_last_name_3", "project_title": "test_title_3", "role_name": "Developer"}'
+    '{"invitorName": "test_first_name_3 test_last_name_3", "projectTitle": "test_title_3", "roleName": "Developer"}'
   );
