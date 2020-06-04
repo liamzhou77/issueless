@@ -18,7 +18,7 @@ from werkzeug.urls import url_parse
 
 @bp.route('/')
 def index():
-    "Redirects to dashboard view."
+    """Redirects to dashboard view."""
     return redirect(url_for('main.dashboard'))
 
 
@@ -44,6 +44,11 @@ def project(user_project):
         user_project: A UserProject object returned from permission_required decorator,
             whose user_id belongs to the current user and project_id is the same as the
             one in the url.
+
+    Aborts:
+        403 Forbidden: A status code aborted if current user is not a member of
+            the project or does not have the permission.
+        404 Not Found: A status code aborted if project does not exist.
     """
 
     project = user_project.project
@@ -70,11 +75,7 @@ def project(user_project):
         return redirect(url_for('main.project', id=project.id))
 
     return render_template(
-        'project.html',
-        title=project.title,
-        project=project,
-        role=user_project.role.name,
-        invitation_form=invitation_form,
+        'project.html', user_project=user_project, invitation_form=invitation_form
     )
 
 
@@ -104,13 +105,12 @@ def create_project():
     description = request.form.get('description')
 
     error = project_validation(title, description)
-    if error:
+    if not error:
+        project = Project(title=title, description=description)
+        current_user.add_project(project, 'Admin')
+        db.session.commit()
+    else:
         flash(error)
-        return redirect(url_for('index'))
-
-    project = Project(title=title, description=description)
-    current_user.add_project(project, 'Admin')
-    db.session.commit()
 
     return redirect(url_for('index'))
 
@@ -128,20 +128,24 @@ def update_project(user_project):
 
     Returns:
         Redirect to dashboard view.
+
+    Aborts:
+        403 Forbidden: A status code aborted if current user is not a member of
+            the project or does not have the permission.
+        404 Not Found: A status code aborted if project does not exist.
     """
 
     title = request.form.get('title')
     description = request.form.get('description')
 
     error = project_validation(title, description)
-    if error:
+    if not error:
+        project = user_project.project
+        project.title = title
+        project.description = description
+        db.session.commit()
+    else:
         flash(error)
-        return redirect(url_for('index'))
-
-    project = user_project.project
-    project.title = title
-    project.description = description
-    db.session.commit()
 
     return redirect(url_for('index'))
 
@@ -152,12 +156,17 @@ def update_project(user_project):
 def delete_project(user_project):
     """Deletes a project.
 
-    Deletes a project. Add notification to all other members. 
+    Deletes a project. Add notification to all other members.
 
     Args:
         user_project: A UserProject object returned from permission_required decorator,
         whose user_id belongs to the current user and project_id is the same as the one
         in the url.
+    
+    Aborts:
+        403 Forbidden: A status code aborted if current user is not a member of
+            the project or does not have the permission.
+        404 Not Found: A status code aborted if project does not exist.
 
     Returns:
         Redirect to dashboard view.
@@ -176,6 +185,43 @@ def delete_project(user_project):
     return redirect(url_for('index'))
 
 
+@bp.route('/projects/<int:id>/quit', methods=['POST'])
+@login_required
+@permission_required(Permission.QUIT_PROJECT)
+def quit_project(user_project):
+    """Deletes user from the project.
+
+    Args:
+        user_project: A UserProject object returned from permission_required decorator,
+        whose user_id belongs to the current user and project_id is the same as the one
+        in the url.
+
+    Aborts:
+        403 Forbidden: A status code aborted if current user is not a member of
+            the project or does not have the permission.
+        404 Not Found: A status code aborted if project does not exist.
+
+    Returns:
+        Redirect to index view.
+    """
+
+    project = user_project.project
+
+    admin = project.get_admin()
+    admin.add_notification(
+        'quit project',
+        {
+            'userName': f'{current_user.first_name} {current_user.last_name}',
+            'projectTitle': project.title,
+        },
+    )
+
+    db.session.delete(user_project)
+    db.session.commit()
+
+    return redirect(url_for('index'))
+
+
 @bp.route('/projects/<int:id>/add-member', methods=['POST'])
 @login_required
 def add_member(id):
@@ -188,13 +234,16 @@ def add_member(id):
             never be sent if the user is already a member of the project.
         next: A url parameter indicating what url to be redirected to.
 
+    Aborts:
+        403 Forbidden: A status code aborted if current user does not have the
+            invitation.
+        404 Not Found: A status code aborted if project does not exist.
+
     Returns:
         Redirect to the 'next' url.
     """
 
-    project = Project.query.get(id)
-    if not project:
-        abort(404)
+    project = Project.query.get_or_404(id)
 
     notification = current_user.notifications.filter_by(
         name='invitation', target_id=id
@@ -220,7 +269,17 @@ def add_member(id):
         role_name = notification.get_data()['roleName']
         current_user.add_project(project, role_name)
 
+        admin = project.get_admin()
+        admin.add_notification(
+            'join project',
+            {
+                'userName': f'{current_user.first_name} {current_user.last_name}',
+                'projectTitle': project.title,
+            },
+        )
+
         db.session.delete(notification)
+
         db.session.commit()
     else:
         flash(error)
@@ -265,7 +324,11 @@ def delete_notification(id):
         Redirect to the 'next' url.
     """
 
-    notification = get_notification(id)
+    notification = Notification.query.get_or_404(id)
+
+    if notification.user_id != current_user.id:
+        abort(403)
+
     db.session.delete(notification)
     db.session.commit()
 
@@ -273,26 +336,3 @@ def delete_notification(id):
     if not next_page or url_parse(next_page).netloc != '':
         next_page = url_for('index')
     return redirect(next_page)
-
-
-def get_notification(id):
-    """Gets a notification.
-
-    Args:
-        id: A notification's id to be queried.
-
-    Aborts:
-        403 Forbidden: A status code aborted if the notification does not belong to
-            current user.
-        404 Not Found: A status code aborted if notification does not exist.
-
-    Returns:
-        A notification whose id is the same as the input id.
-    """
-
-    notification = Notification.query.get(id)
-    if not notification:
-        abort(404)
-    if notification.user_id != current_user.id:
-        abort(403)
-    return notification

@@ -11,14 +11,6 @@ def test_dashboard(client, auth):
         and b'test_title_3---Developer' in rsp.data
     )
 
-    db.session.execute('DELETE FROM user_project where user_id = 1 and project_id = 1;')
-    rsp = client.get('/dashboard')
-    assert b'delete' not in rsp.data
-
-    db.session.execute('INSERT INTO user_project values (1, 1, 1);')
-    rsp = client.get('/dashboard')
-    assert b'delete' in rsp.data
-
 
 def test_create_project_with_invalid_data(client, auth):
     auth.login(1)
@@ -99,6 +91,9 @@ def test_delete_project(client, auth):
     rsp = client.post('/projects/1/delete')
     assert 'http://localhost/dashboard' == rsp.headers['Location']
     assert not Project.query.get(1)
+
+    assert not Notification.query.filter_by(name='project deleted', user_id=1).first()
+    assert Notification.query.filter_by(name='project deleted', user_id=2).first()
 
 
 def test_update_project_with_invalid_data(client, auth):
@@ -263,3 +258,18 @@ def test_add_member(client, auth):
     assert user_project.role.name == 'Developer'
 
     assert not Notification.query.get(1)
+
+    notification = Notification.query.filter_by(
+        name='join project', user_id=user_project.project.get_admin().id
+    ).first()
+    assert notification
+
+
+def test_quit_project(client, auth):
+    auth.login(2)
+
+    rsp = client.post('/projects/1/quit')
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
+
+    assert not UserProject.query.filter_by(user_id=2, project_id=1).first()
+    assert Notification.query.filter_by(name='quit project', user_id=2)

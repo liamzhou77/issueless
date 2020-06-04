@@ -30,15 +30,14 @@ def permission_required(permission):
             """
             Args:
                 id: A project's id to be checked for.
+
             Aborts:
                 403 Forbidden: A status code aborted if current user is not a member of
                     the project or does not have the permission.
                 404 Not Found: A status code aborted if project does not exist.
             """
 
-            project = Project.query.get(id)
-            if not project:
-                abort(404)
+            project = Project.query.get_or_404(id)
 
             user_project = project.user_projects.filter_by(
                 user_id=current_user.id

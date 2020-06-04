@@ -119,6 +119,16 @@ class Project(db.Model):
     def __repr__(self):
         return f'< Project {self.id}, {self.title} >'
 
+    def get_admin(self):
+        """Gets the admin user in the project."""
+        return (
+            self.user_projects.filter_by(
+                role=Role.query.filter_by(name='Admin').first()
+            )
+            .first()
+            .user
+        )
+
 
 class Permission(object):
     """An object representation for permissions.
@@ -131,6 +141,7 @@ class Permission(object):
     UPDATE_PROJECT = 2
     DELETE_PROJECT = 4
     INVITE_MEMBER = 8
+    QUIT_PROJECT = 16
 
 
 class Role(db.Model):
@@ -171,8 +182,8 @@ class Role(db.Model):
                 Permission.DELETE_PROJECT,
                 Permission.INVITE_MEMBER,
             ],
-            'Reviewer': [Permission.READ_PROJECT],
-            'Developer': [Permission.READ_PROJECT],
+            'Reviewer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
+            'Developer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
         }
 
         # Update roles' permissions value instead of inserting new records if role

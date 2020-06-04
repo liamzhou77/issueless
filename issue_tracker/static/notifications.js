@@ -25,8 +25,15 @@ function generate_notifications() {
           `;
         } else if (name == 'project deleted') {
           const projectTitle = data.projectTitle;
-          output += `<strong>${projectTitle}</strong> has been deleted.</strong>`;
+          output += `<strong>${projectTitle}</strong> was deleted.`;
+        } else if (name == 'quit project') {
+          const { projectTitle, userName } = data;
+          output += `<strong>${userName}</strong> left the project <strong>${projectTitle}</strong>.`;
+        } else if (name == 'join project') {
+          const { projectTitle, userName } = data;
+          output += `<strong>${userName}</strong> joined the project <strong>${projectTitle}</strong>.`;
         }
+
         output += '<br>' + moment(timestamp).fromNow();
         output += '</span>';
       });

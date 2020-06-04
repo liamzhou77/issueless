@@ -5,21 +5,14 @@
     <div class="card-header">Projects</div>
     <ul id="project-list" class="list-group list-group-flush">
       {% for user_project in user_projects %}
-        {% set project_id = user_project.project_id %}
-        {% set project_title = user_project.project.title %}
-        {% set project_description = user_project.project.description %}
-        {% set role = user_project.role.name %}
+        {% set project = user_project.project %}
+        {% set role_name = user_project.role.name %}
         <li class="list-group-item p-3 mb-2 bg-light text-dark">
-          <a href="{{ url_for('main.project', id=project_id) }}">{{ project_title }}---{{ role }}</a>
-          {% if role == 'Admin' %}
-            <!-- Edit Project Button -->
-            <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project_id }}" data-title="{{ project_title }}" data-description="{{ project_description }}">
+          <a href="{{ url_for('main.project', id=project.id) }}">{{ project.title }}---{{ role_name }}</a>
+          {% if role_name == 'Admin' %}
+            <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project.id }}" data-title="{{ project.title }}" data-description="{{ project.description }}">
               Edit
             </button>
-            <form action="{{ url_for('main.delete_project', id=project_id) }}" method="post">
-              <!-- Delete Project Button -->
-              <button type="submit">delete</button>
-            </form>
           {% endif %}
         </li>
       {% endfor %} 
