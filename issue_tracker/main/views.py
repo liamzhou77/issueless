@@ -11,7 +11,14 @@ from flask_login import current_user, login_required
 from issue_tracker.decorators import permission_required
 from issue_tracker.main import bp
 from issue_tracker.main.forms import InvitationForm
-from issue_tracker.models import db, Notification, Permission, Project, User
+from issue_tracker.models import (
+    db,
+    Notification,
+    Permission,
+    Project,
+    User,
+    UserProject,
+)
 from issue_tracker.validators import project_validation
 from werkzeug.urls import url_parse
 
@@ -75,7 +82,10 @@ def project(user_project):
         return redirect(url_for('main.project', id=project.id))
 
     return render_template(
-        'project.html', user_project=user_project, invitation_form=invitation_form
+        'project.html',
+        user_project=user_project,
+        user_projects=project.user_projects.order_by(UserProject.role_id).all(),
+        invitation_form=invitation_form,
     )
 
 
@@ -162,7 +172,7 @@ def delete_project(user_project):
         user_project: A UserProject object returned from permission_required decorator,
         whose user_id belongs to the current user and project_id is the same as the one
         in the url.
-    
+
     Aborts:
         403 Forbidden: A status code aborted if current user is not a member of
             the project or does not have the permission.
@@ -185,41 +195,71 @@ def delete_project(user_project):
     return redirect(url_for('index'))
 
 
-@bp.route('/projects/<int:id>/quit', methods=['POST'])
+@bp.route('/projects/<int:id>/delete-member', methods=['POST'])
 @login_required
-@permission_required(Permission.QUIT_PROJECT)
-def quit_project(user_project):
+def delete_member(id):
     """Deletes user from the project.
 
+    Deletes user from the project. If current user is admin of the project, delete the
+    user who has the same id as the one in the form['user_id']. Otherwise, remove
+    current user from the project.
+
     Args:
-        user_project: A UserProject object returned from permission_required decorator,
-        whose user_id belongs to the current user and project_id is the same as the one
-        in the url.
+        id: An url parameter indicating the project's id.
+
+    Form Data:
+        user_id: Id of the user to be removed.
 
     Aborts:
+        400 Bad Request: A status code aborted if current user is admin and the forn
         403 Forbidden: A status code aborted if current user is not a member of
-            the project or does not have the permission.
-        404 Not Found: A status code aborted if project does not exist.
+            the project or the user to be removed is not a member of the project.
+        404 Not Found: A status code aborted if project does not exist or the user to
+            be removed does not exist.
 
     Returns:
         Redirect to index view.
     """
 
-    project = user_project.project
+    project = Project.query.get_or_404(id)
+    user_project = current_user.user_projects.filter_by(project=project).first()
+    next_page = None
 
-    admin = project.get_admin()
-    admin.add_notification(
-        'quit project',
-        {
-            'userName': f'{current_user.first_name} {current_user.last_name}',
-            'projectTitle': project.title,
-        },
-    )
+    if not user_project:
+        abort(403)
+
+    if user_project.role.name == 'Admin':
+        user_id = request.form.get('user_id')
+        if not user_id:
+            abort(400)
+
+        user = User.query.get_or_404(user_id)
+        user_project = project.user_projects.filter_by(user=user).first()
+
+        if not user_project or user == current_user:
+            abort(403)
+
+        user.add_notification(
+            'user removed', {'projectTitle': project.title},
+        )
+
+        next_page = url_for('main.project', id=id)
+    else:
+        admin = project.get_admin()
+        admin.add_notification(
+            'quit project',
+            {
+                'userName': f'{current_user.first_name} {current_user.last_name}',
+                'projectTitle': project.title,
+            },
+        )
+
+        next_page = url_for('index')
 
     db.session.delete(user_project)
     db.session.commit()
 
-    return redirect(url_for('index'))
+    return redirect(next_page)
 
 
 @bp.route('/projects/<int:id>/add-member', methods=['POST'])
@@ -291,7 +331,9 @@ def add_member(id):
 @login_required
 def notifications():
     """Returns notifications in json."""
-    notifications = current_user.notifications.order_by(Notification.timestamp.desc())
+    notifications = current_user.notifications.order_by(
+        Notification.timestamp.desc()
+    ).all()
     return jsonify(
         [
             {
@@ -326,7 +368,7 @@ def delete_notification(id):
 
     notification = Notification.query.get_or_404(id)
 
-    if notification.user_id != current_user.id:
+    if notification.user != current_user:
         abort(403)
 
     db.session.delete(notification)

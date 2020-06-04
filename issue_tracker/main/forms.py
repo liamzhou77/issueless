@@ -40,5 +40,5 @@ class InvitationForm(FlaskForm):
                 raise ValidationError('Unknown email address. Please try again.')
             elif email == current_user.email:
                 raise ValidationError('You can not invite yourself to your project.')
-            elif self.user_projects.filter_by(user_id=user.id).first():
+            elif self.user_projects.filter_by(user=user).first():
                 raise ValidationError('User is already a member of the project.')

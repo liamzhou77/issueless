@@ -40,8 +40,8 @@ class User(UserMixin, db.Model):
         """
 
         role = Role.query.filter_by(name=role_name).first()
-        new_user_project = UserProject(user=self, project=project, role=role)
-        db.session.add(new_user_project)
+        user_project = UserProject(user=self, project=project, role=role)
+        db.session.add(user_project)
 
     def avatar(self, size):
         """Generates the avatar link for user.
@@ -214,6 +214,9 @@ class Notification(db.Model):
         db.DateTime, index=True, default=datetime.utcnow, nullable=False
     )
     payload_json = db.Column(db.Text)
+
+    def __repr__(self):
+        return f'< Notification {self.id}, {self.name}, {self.target_id}, {self.payload_json}, {self.timestamp} >'
 
     def get_data(self):
         return json.loads(str(self.payload_json))

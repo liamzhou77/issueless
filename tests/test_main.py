@@ -265,11 +265,29 @@ def test_add_member(client, auth):
     assert notification
 
 
-def test_quit_project(client, auth):
+def test_delete_member(client, auth):
     auth.login(2)
 
-    rsp = client.post('/projects/1/quit')
-    assert 'http://localhost/dashboard' == rsp.headers['Location']
+    assert client.post('/projects/4/delete-member').status_code == 404
+    assert client.post('/projects/3/delete-member').status_code == 403
 
+    rsp = client.post('/projects/1/delete-member')
+    assert 'http://localhost/dashboard' == rsp.headers['Location']
     assert not UserProject.query.filter_by(user_id=2, project_id=1).first()
-    assert Notification.query.filter_by(name='quit project', user_id=2)
+    assert Notification.query.filter_by(name='quit project', user_id=1).first()
+
+    assert client.post('/projects/2/delete-member').status_code == 400
+    assert (
+        client.post('/projects/2/delete-member', data={'user_id': 4}).status_code == 404
+    )
+    assert (
+        client.post('/projects/2/delete-member', data={'user_id': 3}).status_code == 403
+    )
+    assert (
+        client.post('/projects/2/delete-member', data={'user_id': 2}).status_code == 403
+    )
+
+    rsp = client.post('/projects/2/delete-member', data={'user_id': 1})
+    assert 'http://localhost/projects/2' == rsp.headers['Location']
+    assert not UserProject.query.filter_by(user_id=1, project_id=2).first()
+    assert Notification.query.filter_by(name='user removed', user_id=1).first()

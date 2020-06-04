@@ -39,9 +39,7 @@ def permission_required(permission):
 
             project = Project.query.get_or_404(id)
 
-            user_project = project.user_projects.filter_by(
-                user_id=current_user.id
-            ).first()
+            user_project = current_user.user_projects.filter_by(project=project).first()
             if not user_project or not user_project.can(permission):
                 abort(403)
 

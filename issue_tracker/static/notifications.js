@@ -28,10 +28,13 @@ function generate_notifications() {
           output += `<strong>${projectTitle}</strong> was deleted.`;
         } else if (name == 'quit project') {
           const { projectTitle, userName } = data;
-          output += `<strong>${userName}</strong> left the project <strong>${projectTitle}</strong>.`;
+          output += `<strong>${userName}</strong> left project <strong>${projectTitle}</strong>.`;
         } else if (name == 'join project') {
           const { projectTitle, userName } = data;
-          output += `<strong>${userName}</strong> joined the project <strong>${projectTitle}</strong>.`;
+          output += `<strong>${userName}</strong> joined project <strong>${projectTitle}</strong>.`;
+        } else if (name == 'user removed') {
+          const projectTitle = data.projectTitle;
+          output += `You are removed from project <strong>${projectTitle}</strong>.`;
         }
 
         output += '<br>' + moment(timestamp).fromNow();
