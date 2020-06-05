@@ -28,17 +28,17 @@ VALUES
   ('test_title_3', 'test_description_3');
 
 INSERT INTO
-  user_project (user_id, project_id, role_id)
+  user_project (user_id, project_id, role_id, timestamp)
 VALUES
   -- User 1 is admin in project 1, reviewer in project 2, developer in project 3
-  (1, 1, 1),
-  (1, 2, 2),
-  (1, 3, 3),
+  (1, 1, 1, '2020-06-05 04:00:27.219008'),
+  (1, 2, 2, '2020-06-05 04:00:27.219008'),
+  (1, 3, 3, '2020-06-05 04:00:27.219008'),
   -- User 2 is reviewer in project 1, admin in project 2
-  (2, 1, 2),
-  (2, 2, 1),
+  (2, 1, 2, '2020-06-05 04:00:27.219008'),
+  (2, 2, 1, '2020-06-05 04:00:27.219008'),
   -- User 3 is admin in project 3
-  (3, 3, 1);
+  (3, 3, 1, '2020-06-05 04:00:27.219008');
 
 INSERT INTO
   notifications (

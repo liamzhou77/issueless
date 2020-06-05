@@ -12,7 +12,7 @@
       <li class="list-group-item">
         {{ user.first_name }} {{ user.last_name }} --- {{ user_project.role.name }}
         {% if role_name == 'Admin' and user_project.user != current_user %}
-          <form action="{{ url_for('main.delete_member', id=project.id) }}" method='post'>
+          <form action="{{ url_for('projects.delete_member', id=project.id) }}" method='post'>
             <input type="hidden" name="user_id" value="{{ user_project.user_id }}">
             <button type="submit">delete</button>
           </form>
@@ -22,7 +22,7 @@
   </ul>
 
   {% if role_name == 'Admin' %}
-    <form id="invitation-form" action="{{ url_for('main.project', id=project.id) }}" method="post" novalidate>
+    <form id="invitation-form" action="{{ url_for('projects.project', id=project.id) }}" method="post" novalidate>
       {{ invitation_form.hidden_tag() }} 
       {{ invitation_form.email.label }}<br>
       {{ invitation_form.email(placeholder='email') }}
@@ -34,13 +34,7 @@
     </form>
     <button type="submit" class="btn btn-primary" form="invitation-form">Invite</button>
 
-    <form action="{{ url_for('main.delete_project', id=project.id) }}" method="post">
-      <button type="submit">delete</button>
-    </form>
-  {% else %}
-    <form action="{{ url_for('main.delete_member', id=project.id) }}" method="post">
-      <button type="submit">quit</button>
-    </form>
+
   {% endif %}
 
 {% endblock %}

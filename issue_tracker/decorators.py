@@ -2,7 +2,7 @@
 
   Typical usage example:
 
-  @permission_required(Permission.UPDATE_PROJECT)
+  @permission_required(Permission.MANAGE_PROJECT)
   def update:
 """
 

@@ -86,6 +86,9 @@ class UserProject(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    timestamp = db.Column(
+        db.DateTime, index=True, default=datetime.utcnow, nullable=False
+    )
 
     user = db.relationship(
         'User',
@@ -138,10 +141,7 @@ class Permission(object):
     """
 
     READ_PROJECT = 1
-    UPDATE_PROJECT = 2
-    DELETE_PROJECT = 4
-    INVITE_MEMBER = 8
-    QUIT_PROJECT = 16
+    MANAGE_PROJECT = 2
 
 
 class Role(db.Model):
@@ -176,14 +176,9 @@ class Role(db.Model):
     def insert_roles():
         """Inserts roles into databse with their specific permissions."""
         role_permissions = {
-            'Admin': [
-                Permission.READ_PROJECT,
-                Permission.UPDATE_PROJECT,
-                Permission.DELETE_PROJECT,
-                Permission.INVITE_MEMBER,
-            ],
-            'Reviewer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
-            'Developer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
+            'Admin': [Permission.READ_PROJECT, Permission.MANAGE_PROJECT],
+            'Reviewer': [Permission.READ_PROJECT],
+            'Developer': [Permission.READ_PROJECT],
         }
 
         # Update roles' permissions value instead of inserting new records if role
@@ -216,7 +211,10 @@ class Notification(db.Model):
     payload_json = db.Column(db.Text)
 
     def __repr__(self):
-        return f'< Notification {self.id}, {self.name}, {self.target_id}, {self.payload_json}, {self.timestamp} >'
+        return (
+            f'< Notification {self.id}, {self.name}, {self.target_id}, '
+            f'{self.payload_json}, {self.timestamp} >'
+        )
 
     def get_data(self):
         return json.loads(str(self.payload_json))

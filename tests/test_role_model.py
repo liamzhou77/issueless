@@ -21,11 +21,7 @@ def test_insert_roles(app):
 
 def test_has_permission(app):
     admin_role = Role.query.get(1)
-    assert admin_role.has_permission(Permission.UPDATE_PROJECT)
-    assert admin_role.has_permission(Permission.DELETE_PROJECT)
-    assert admin_role.has_permission(Permission.INVITE_MEMBER)
+    assert admin_role.has_permission(Permission.MANAGE_PROJECT)
 
     reviewer_role = Role.query.get(2)
-    assert not reviewer_role.has_permission(Permission.UPDATE_PROJECT)
-    assert not reviewer_role.has_permission(Permission.DELETE_PROJECT)
-    assert not reviewer_role.has_permission(Permission.INVITE_MEMBER)
+    assert not reviewer_role.has_permission(Permission.MANAGE_PROJECT)

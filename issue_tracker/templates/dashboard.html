@@ -8,11 +8,19 @@
         {% set project = user_project.project %}
         {% set role_name = user_project.role.name %}
         <li class="list-group-item p-3 mb-2 bg-light text-dark">
-          <a href="{{ url_for('main.project', id=project.id) }}">{{ project.title }}---{{ role_name }}</a>
+          <a href="{{ url_for('projects.project', id=project.id) }}">{{ project.title }} - {{ role_name }}</a><br>
           {% if role_name == 'Admin' %}
-            <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project.id }}" data-title="{{ project.title }}" data-description="{{ project.description }}">
+            {# <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project.id }}" data-title="{{ project.title }}" data-description="{{ project.description }}">
               Edit
-            </button>
+            </button> #}
+            <a href="{{ url_for('projects.manage', id=project.id) }}">manage</a>
+            <form action="{{ url_for('projects.delete', id=project.id) }}" method="post">
+              <button type="submit">delete</button>
+            </form>
+          {% else %}
+            <form action="{{ url_for('projects.delete_member', id=project.id) }}" method="post">
+              <button type="submit">quit</button>
+            </form>
           {% endif %}
         </li>
       {% endfor %} 
@@ -33,17 +41,17 @@
           </button>
         </div>
         <div class="modal-body">
-          <form id="project-form" class="needs-validation" method="post" novalidate>
+          <form id="create-project-form" class="needs-validation" action="{{ url_for('projects.create') }}" method="post" novalidate>
             <div class="form-group">
-              <label for="project-title">Title</label>
-              <input name="title" type="text" class="form-control" id="project-title" maxlength=50 placeholder="your project's title" required>
+              <label for="project-title">Project Title</label>
+              <input name="title" type="text" class="form-control" maxlength=50 placeholder="your project's title" required>
               <div class="invalid-feedback">
                 Please provide your project's title.
               </div>
             </div>
             <div class="form-group">
-              <label for="project-description">Description</label>
-              <textarea name="description" class="form-control" id="project-description" maxlength=200 placeholder="your project's description" rows="3" required></textarea>
+              <label for="project-description">Project Description</label>
+              <textarea name="description" class="form-control" maxlength=200 placeholder="your project's description" rows="3" required></textarea>
               <div class="invalid-feedback">
                 Please provide your project's description.
               </div>
@@ -52,7 +60,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary" form="project-form">Submit</button>
+          <button type="submit" class="btn btn-primary" form="create-project-form">Submit</button>
         </div>
       </div>
     </div>
@@ -60,6 +68,5 @@
 {% endblock %} 
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='events.js') }}"></script>
   <script src="{{ url_for('static', filename='submission.js') }}"></script>
 {% endblock %}
