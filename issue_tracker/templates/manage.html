@@ -1,29 +1,77 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <form class="needs-validation" action="{{ url_for('projects.update', id=project.id) }}" method="post" novalidate>
+  <form id="edit-project-form" class="needs-validation" novalidate>
     <div class="form-group">
       <label for="project-title">Project Title</label>
-      <input name="title" type="text" class="form-control" maxlength=50 placeholder="your project's title" value="{{ project.title }}" required>
+      <input id="edit-project-title" class="form-control" name="title" type="text" maxlength=50 placeholder="your project's title" value="{{ project.title }}" required>
       <div class="invalid-feedback">
         Please provide your project's title.
       </div>
     </div>
     <div class="form-group">
       <label for="project-description">Project Description</label>
-      <textarea name="description" class="form-control" maxlength=200 placeholder="your project's description" rows="3" required>{{ project.description }}</textarea>
+      <textarea id="edit-project-description" class="form-control" name="description" maxlength=200 placeholder="your project's description" rows="3" required>{{ project.description }}</textarea>
       <div class="invalid-feedback">
         Please provide your project's description.
       </div>
     </div>
-    <button type="submit">Edit</button>
+    <button type="submit">Edit</button><span id='edit-project-message'></span>
   </form>
 
   <h2>Members</h2>
   <input type="search" placeholder="search by name or email" name="search_term">
   
+  <form id="invitation-form" action="{{ url_for('projects.manage', id=project.id) }}" method="post" novalidate>
+    {{ invitation_form.hidden_tag() }} 
+    {{ invitation_form.email.label }}<br>
+    {{ invitation_form.email(placeholder='email') }}
+    as
+    {{ invitation_form.role }}
+    {% for error in invitation_form.errors.values() %}
+      <span style="color: red;">{{ error }}</span>
+    {% endfor %}
+  </form>
+<button type="submit" class="btn btn-primary" form="invitation-form">Invite</button>
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='submission.js') }}"></script>
+  <script>
+    function editProject(e) {
+      e.preventDefault();
+
+      const message = document.getElementById('edit-project-message');
+      message.textContent = '';
+
+      const form = document.getElementById('edit-project-form');
+      if (!form.checkValidity()) {
+        e.stopPropagation();
+        return;
+      }
+
+      const title = document.getElementById('edit-project-title').value;
+      const description = document.getElementById('edit-project-description').value;
+      fetch("{{ url_for('projects.update', id=project.id) }}", {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify({ title, description }),
+      })
+        .then((rsp) => rsp.json())
+        .then((data) => {
+          if (data.success) {
+            message.textContent = 'Edit successfully';
+            form.classList.add('was-validated');
+          } else {
+            message.textContent = data.message;
+          }
+        });
+    }
+
+    document
+      .getElementById('edit-project-form')
+      .addEventListener('submit', editProject);
+  </script>
 {% endblock %}

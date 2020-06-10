@@ -1,6 +1,6 @@
-notificationDropdown = document.getElementById('notification-dropdown');
+const notificationDropdown = document.getElementById('notification-dropdown');
 
-function generate_notifications() {
+function generateNotifications() {
   fetch('/notifications')
     .then((rsp) => rsp.json())
     .then((notifications) => {
@@ -23,26 +23,26 @@ function generate_notifications() {
               <button type="submit">Accept</button>
             </form>
           `;
-        } else if (name == 'project deleted') {
-          const projectTitle = data.projectTitle;
+        } else if (name === 'project deleted') {
+          const { projectTitle } = data;
           output += `<strong>${projectTitle}</strong> was deleted.`;
-        } else if (name == 'quit project') {
+        } else if (name === 'quit project') {
           const { projectTitle, userName } = data;
           output += `<strong>${userName}</strong> left project <strong>${projectTitle}</strong>.`;
-        } else if (name == 'join project') {
+        } else if (name === 'join project') {
           const { projectTitle, userName } = data;
           output += `<strong>${userName}</strong> joined project <strong>${projectTitle}</strong>.`;
-        } else if (name == 'user removed') {
-          const projectTitle = data.projectTitle;
+        } else if (name === 'user removed') {
+          const { projectTitle } = data;
           output += `You are removed from project <strong>${projectTitle}</strong>.`;
         }
 
-        output += '<br>' + moment(timestamp).fromNow();
+        output += `<br>${moment(timestamp).fromNow()}`;
         output += '</span>';
       });
       notificationDropdown.innerHTML = output;
     });
 }
 
-setInterval(generate_notifications(), 10000);
-generate_notifications();
+setInterval(generateNotifications(), 10000);
+generateNotifications();

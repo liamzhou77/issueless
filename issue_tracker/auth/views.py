@@ -18,24 +18,22 @@ from issue_tracker.oauth import configure_oauth
 def callback():
     """Executes authorization after user is authticated by Auth0.
 
-    Returns:
-        Redirect to the location specified in session key 'next'
-
-    Aborts:
-        404 Not Found: A status code aborted if user hard codes the callback url.
+    Responses:
+        302:
+            description: Redirect to the location specified in session key 'next'.
+        403:
+            description: Forbidden.
     """
 
     client_secret = current_app.config['AUTH0_CLIENT_SECRET']
     auth0 = configure_oauth(client_secret)
 
-    # Hard coding callback route in browser would result in various exceptions. In this
-    # case, a 404 Not Found status code would be more appropriate because only Auth0 is
-    # authorized to access this callback route, this route should not be visible to
-    # user.
+    # Hard coding callback route in browser would result in various exceptions. Only
+    # Auth0 is authorized to access this callback route.
     try:
         auth0.authorize_access_token()
     except Exception:
-        abort(404)
+        abort(403)
 
     rsp = auth0.get('userinfo')
     userinfo = rsp.json()
@@ -65,8 +63,9 @@ def callback():
 def login():
     """Initializes Auth0 authentification.
 
-    Returns:
-        Redirect to Auth0's login page.
+    Responses:
+        302:
+            description: Redirect to Auth0's login page.
     """
 
     if current_user.is_authenticated:
@@ -87,8 +86,9 @@ def logout():
     Logs user out from flask_login and Auth0. Auth0 would redirect user back to the
     login view after log out.
 
-    Returns:
-        Redirect to Auth0's logout page.
+    Responses:
+        302:
+            description: Redirect to Auth0's logout page.
     """
 
     # Redirect users to login page if they are not authenticated. Use this instead of

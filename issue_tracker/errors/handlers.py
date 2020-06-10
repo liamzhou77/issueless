@@ -6,9 +6,10 @@
 """
 
 
-from flask import render_template
+from flask import jsonify, render_template
 
 from issue_tracker.errors import bp
+from issue_tracker.errors.errors import FormValidationError
 from issue_tracker.models import db
 
 
@@ -21,3 +22,8 @@ def not_found(error):
 def internal_server_error(error):
     db.session.rollback()
     return render_template('errors/500.html'), 500
+
+
+@bp.app_errorhandler(FormValidationError)
+def form_validation_error(error):
+    return jsonify({'success': False, 'message': error.message}), 422

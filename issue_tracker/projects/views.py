@@ -11,7 +11,7 @@ from flask_login import current_user, login_required
 from issue_tracker.decorators import permission_required
 from issue_tracker.projects import bp
 from issue_tracker.projects.forms import InvitationForm
-from issue_tracker.models import db, Permission, Project, User, UserProject
+from issue_tracker.models import db, Permission, Project, User
 from issue_tracker.validators import (
     create_project_validation,
     update_project_validation,
@@ -19,7 +19,7 @@ from issue_tracker.validators import (
 from werkzeug.urls import url_parse
 
 
-@bp.route('/<int:id>', methods=['GET', 'POST'])
+@bp.route('/<int:id>', methods=['GET'])
 @login_required
 @permission_required(Permission.READ_PROJECT)
 def project(user_project):
@@ -38,14 +38,18 @@ def project(user_project):
         404 Not Found: A status code aborted if project does not exist.
     """
 
+    return render_template('project.html', user_project=user_project)
+
+
+@bp.route('/<int:id>/manage', methods=['GET', 'POST'])
+@login_required
+@permission_required(Permission.MANAGE_PROJECT)
+def manage(user_project):
     project = user_project.project
+
     invitation_form = InvitationForm(user_projects=project.user_projects)
 
     if invitation_form.validate_on_submit():
-        if project.user_projects.count() >= 30:
-            flash('You can only have 30 or less members in one project.')
-            return redirect(url_for('projects.project', id=project.id))
-
         invited_email = request.form.get('email')
         role_name = request.form.get('role')
 
@@ -62,21 +66,10 @@ def project(user_project):
         return redirect(url_for('projects.project', id=project.id))
 
     return render_template(
-        'project.html',
-        title=project.title,
-        user_project=user_project,
-        user_projects=project.user_projects.order_by(UserProject.role_id).all(),
+        'manage.html',
+        title=f'Manage - {project.title}',
+        project=project,
         invitation_form=invitation_form,
-    )
-
-
-@bp.route('/<int:id>/manage')
-@login_required
-@permission_required(Permission.MANAGE_PROJECT)
-def manage(user_project):
-    project = user_project.project
-    return render_template(
-        'manage.html', title=f'Manage - {project.title}', project=project
     )
 
 
@@ -85,12 +78,19 @@ def manage(user_project):
 def create():
     """Creates a new project.
 
-    Form Data:
-        title: A project's title.
-        description: A project's description.
+    Args:
+      - name: title
+        in: formData
+        type: string
+        description: The new project's title.
+      - name: description
+        in: formData
+        type: string
+        description: The new project's description.
 
-    Returns:
-        Redirect to dashboard view.
+    Responses:
+        302:
+            description: Redirect to index view.
     """
 
     if current_user.user_projects.count() >= 4:
@@ -121,34 +121,53 @@ def create():
 def update(user_project):
     """Updates a project's information.
 
+    Produces:
+        application/json
+
     Args:
-        user_project: A UserProject object returned from permission_required decorator,
-        whose user_id belongs to the current user and project_id is the same as the one
-        in the url.
+      - name: user_project
+        in: permission_required() decorator
+        type: UserProject
+        description: A UserProject object whose user_id belongs to the current user and
+          project_id is the same as the query parameter - id.
+      - name: title
+        in: formData
+        type: string
+        description: The project's new title.
+      - name: description
+        in: formData
+        type: string
+        description: The project's new description.
 
-    Returns:
-        Redirect to dashboard view.
-
-    Aborts:
-        403 Forbidden: A status code aborted if current user is not a member of
-            the project or does not have the permission.
-        404 Not Found: A status code aborted if project does not exist.
+    Responses:
+        200:
+            description: Successful update.
+        400:
+            description: Bad request.
+        403:
+            description: Current user is not a member of the project or does not have
+                the permission.
+        404:
+            description: Project does not exist.
+        422:
+            description: Invalid form data.
     """
 
     project = user_project.project
 
-    title = request.form.get('title')
-    description = request.form.get('description')
+    body = request.get_json()
+    title = body.get('title')
+    description = body.get('description')
+    if None in (title, description):
+        abort(400)
 
-    error = update_project_validation(project, title, description)
-    if not error:
-        project.title = title
-        project.description = description
-        db.session.commit()
-    else:
-        flash(error)
+    update_project_validation(project, title, description)
 
-    return redirect(url_for('projects.manage', id=project.id))
+    project.title = title
+    project.description = description
+    db.session.commit()
+
+    return {'success': True}
 
 
 @bp.route('/<int:id>/delete', methods=['POST'])
@@ -160,23 +179,25 @@ def delete(user_project):
     Deletes a project. Add notification to all other members.
 
     Args:
-        user_project: A UserProject object returned from permission_required decorator,
-        whose user_id belongs to the current user and project_id is the same as the one
-        in the url.
+      - name: user_project
+        in: permission_required() decorator
+        type: UserProject
+        description: A UserProject object whose user_id belongs to the current user and
+          project_id is the same as the query parameter - id.
 
-    Aborts:
-        403 Forbidden: A status code aborted if current user is not a member of
-            the project or does not have the permission.
-        404 Not Found: A status code aborted if project does not exist.
-
-    Returns:
-        Redirect to dashboard view.
+    Responses:
+        302:
+            description: Redirect to index view.
+        403:
+            description: Current user is not a member of the project or does not have
+                the permission.
+        404:
+            description: Project does not exist.
     """
 
     project = user_project.project
 
-    users = project.users
-    for user in users:
+    for user in project.users:
         if user != current_user:
             user.add_notification('project deleted', {'projectTitle': project.title})
 

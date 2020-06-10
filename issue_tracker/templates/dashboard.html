@@ -10,9 +10,6 @@
         <li class="list-group-item p-3 mb-2 bg-light text-dark">
           <a href="{{ url_for('projects.project', id=project.id) }}">{{ project.title }} - {{ role_name }}</a><br>
           {% if role_name == 'Admin' %}
-            {# <button type="button" class="btn btn-primary edit-project-btn" data-id="{{ project.id }}" data-title="{{ project.title }}" data-description="{{ project.description }}">
-              Edit
-            </button> #}
             <a href="{{ url_for('projects.manage', id=project.id) }}">manage</a>
             <form action="{{ url_for('projects.delete', id=project.id) }}" method="post">
               <button type="submit">delete</button>
@@ -68,5 +65,5 @@
 {% endblock %} 
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='submission.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/submission.js') }}"></script>
 {% endblock %}

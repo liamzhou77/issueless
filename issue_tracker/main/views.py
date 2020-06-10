@@ -23,7 +23,15 @@ def index():
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    """Renders the dashboard template."""
+    """Returns the dashboard page.
+
+    Produces:
+        text/html
+
+    Responses:
+        200:
+            description: The dashboard html page.
+    """
     user_projects = current_user.user_projects.order_by(UserProject.timestamp)
     return render_template(
         'dashboard.html', title='Dashboard', user_projects=user_projects
@@ -33,7 +41,15 @@ def dashboard():
 @bp.route('/notifications')
 @login_required
 def notifications():
-    """Returns notifications in json."""
+    """Returns current user's notifications.
+
+    Produces:
+        application/json
+
+    Responses:
+        200:
+            description: Current user's notifications.
+    """
     notifications = current_user.notifications.order_by(
         Notification.timestamp.desc()
     ).all()
@@ -51,22 +67,29 @@ def notifications():
     )
 
 
+# TODO: change to returning json
 @bp.route('/notifications/<int:id>/delete', methods=['POST'])
 @login_required
 def delete_notification(id):
     """Deletes a notification.
 
     Args:
-        id: A notification's id.
-        next: A url parameter indicating what url to be redirected to.
+      - name: id
+        in: path
+        type: int
+        description: Id of the notification to be deleted.
+      - name: next
+        in: query
+        type: string
+        description: Indicating what url to be redirected to.
 
-    Aborts:
-        403 Forbidden: A status code aborted if the notification does not belong to
-            current user.
-        404 Not Found: A status code aborted if notification does not exist.
-
-    Returns:
-        Redirect to the 'next' url.
+    Responses:
+        302:
+            description: Redirect to the 'next' url.
+        403:
+            description: Notification does not belong to current user.
+        404:
+            description: Notification not found.
     """
 
     notification = Notification.query.get_or_404(id)

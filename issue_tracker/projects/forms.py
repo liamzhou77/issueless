@@ -4,7 +4,7 @@
 
   form = InvitationForm()
   if form.validate_on_submit():
-      pass
+    pass
 """
 
 from flask_login import current_user
@@ -42,3 +42,7 @@ class InvitationForm(FlaskForm):
                 raise ValidationError('You can not invite yourself to your project.')
             elif self.user_projects.filter_by(user=user).first():
                 raise ValidationError('User is already a member of the project.')
+            elif self.user_projects.count() >= 30:
+                raise ValidationError(
+                    'You can only have 30 or less members in one project.'
+                )
