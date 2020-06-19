@@ -1,23 +1,26 @@
 INSERT INTO
-  users (sub, email, first_name, last_name)
+  users (sub, email, username, first_name, last_name)
 VALUES
   (
     'test_sub_1',
     'test1@gmail.com',
-    'test_first_name_1',
-    'test_last_name_1'
+    'test_username_1',
+    'David',
+    'Johnson'
   ),
   (
     'test_sub_2',
     'test2@gmail.com',
-    'test_first_name_2',
-    'test_last_name_2'
+    'test_username_2',
+    'Wade',
+    'Tom'
   ),
   (
     'test_sub_3',
     'test3@gmail.com',
-    'test_first_name_3',
-    'test_last_name_3'
+    'test_username_3',
+    'Ryan',
+    'Cooper'
   );
 
 INSERT INTO
@@ -55,7 +58,7 @@ VALUES
     2,
     3,
     '2020-06-02 05:59:22.344978',
-    '{"invitorName": "test_first_name_2 test_last_name_2", "projectTitle": "test_title_2", "roleName": "Developer"}'
+    '{"invitorName": "Wade Tom", "projectTitle": "test_title_2", "roleName": "Developer"}'
   ),
   -- User 2 received an invitation to project 3
   (
@@ -63,5 +66,5 @@ VALUES
     3,
     2,
     '2020-06-02 05:59:22.344978',
-    '{"invitorName": "test_first_name_3 test_last_name_3", "projectTitle": "test_title_3", "roleName": "Developer"}'
+    '{"invitorName": "Ryan Cooper", "projectTitle": "test_title_3", "roleName": "Developer"}'
   );

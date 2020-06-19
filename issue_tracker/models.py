@@ -1,10 +1,3 @@
-"""Defines all SqlAlchemy models.
-
-  Typical usage example:
-
-  user = User.query.get(1)
-"""
-
 from datetime import datetime
 from hashlib import md5
 import json
@@ -18,18 +11,23 @@ db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
+    __table_args__ = (db.Index('user_name', 'first_name', 'last_name'),)
 
     id = db.Column(db.Integer, primary_key=True)
     sub = db.Column(db.String(), unique=True, nullable=False)
     email = db.Column(db.String(), unique=True, nullable=False)
-    first_name = db.Column(db.String(), nullable=False)
-    last_name = db.Column(db.String(), nullable=False)
+    username = db.Column(db.String(15), unique=True, nullable=False)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
 
     projects = association_proxy('user_projects', 'project')
     notifications = db.relationship('Notification', backref='user', lazy='dynamic')
 
     def __repr__(self):
-        return f'< User {self.id}, {self.first_name} {self.last_name}, {self.email} >'
+        return (
+            f'< User {self.id}, {self.email}, {self.username}, {self.first_name} '
+            f'{self.last_name} >'
+        )
 
     def add_project(self, project, role_name):
         """Adds the input project with input role under current user.
@@ -71,7 +69,7 @@ class User(UserMixin, db.Model):
             ).first()
             # If user has already received the invitation, delete it before
             # replacing it with the new one.
-            if notification:
+            if notification is not None:
                 db.session.delete(notification)
 
         new_notification = Notification(
@@ -79,13 +77,18 @@ class User(UserMixin, db.Model):
         )
         db.session.add(new_notification)
 
+    def fullname(self):
+        return f'{self.first_name} {self.last_name}'
+
 
 class UserProject(db.Model):
     __tablename__ = 'user_project'
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    role_id = db.Column(
+        db.Integer, db.ForeignKey('roles.id'), index=True, nullable=False
+    )
     timestamp = db.Column(
         db.DateTime, index=True, default=datetime.utcnow, nullable=False
     )
@@ -114,8 +117,8 @@ class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(), index=True, nullable=False)
-    description = db.Column(db.String(), nullable=False)
+    title = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
 
     users = association_proxy('user_projects', 'user')
 
@@ -142,6 +145,7 @@ class Permission(object):
 
     READ_PROJECT = 1
     MANAGE_PROJECT = 2
+    QUIT_PROJECT = 4
 
 
 class Role(db.Model):
@@ -177,15 +181,15 @@ class Role(db.Model):
         """Inserts roles into databse with their specific permissions."""
         role_permissions = {
             'Admin': [Permission.READ_PROJECT, Permission.MANAGE_PROJECT],
-            'Reviewer': [Permission.READ_PROJECT],
-            'Developer': [Permission.READ_PROJECT],
+            'Reviewer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
+            'Developer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
         }
 
         # Update roles' permissions value instead of inserting new records if role
         # already exists.
         for r, permissions in role_permissions.items():
             role = Role.query.filter_by(name=r).first()
-            if not role:
+            if role is None:
                 role = Role(name=r, permissions=0)
             role.reset_permissions()
             for permission in permissions:

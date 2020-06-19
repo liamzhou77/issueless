@@ -2,10 +2,10 @@
 
   Typical usage example:
 
-  raise FormValidationError('error_message');
+  raise ValidationError('error_message');
 """
 
 
-class FormValidationError(Exception):
-    def __init__(self, message):
-        self.message = message
+class ValidationError(Exception):
+    def __init__(self, error):
+        self.error = error

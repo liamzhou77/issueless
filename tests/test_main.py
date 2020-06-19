@@ -1,4 +1,6 @@
-from issue_tracker.models import Notification, UserProject
+import json
+
+from issue_tracker.models import Notification
 
 
 def test_index(client, auth):
@@ -8,8 +10,28 @@ def test_index(client, auth):
 
 def test_dashboard(client, auth):
     auth.login(1)
-    rsp = client.get('/dashboard')
-    assert rsp.status_code == 200
+    resp = client.get('/dashboard')
+    assert resp.status_code == 200
+
+
+def test_notifications(client, auth):
+    auth.login(2)
+    resp = client.get('/notifications')
+    assert resp.status_code == 200
+
+    data = json.loads(resp.data)
+    assert data['success']
+    notifications = data['notifications']
+    assert len(notifications) == 1
+    notification = notifications[0]
+    assert notification['notificationId'] == 2
+    assert notification['name'] == 'invitation'
+    assert notification['targetId'] == 3
+    assert notification['data'] == {
+        "invitorName": "Ryan Cooper",
+        "projectTitle": "test_title_3",
+        "roleName": "Developer",
+    }
 
 
 def test_delete_notification(client, auth):
@@ -18,15 +40,8 @@ def test_delete_notification(client, auth):
     assert client.post('/notifications/2/delete').status_code == 403
     assert client.post('/notifications/10/delete').status_code == 404
 
-    rsp = client.post('/notifications/1/delete')
-    assert rsp.status_code == 302
+    resp = client.post('/notifications/1/delete')
+    assert resp.status_code == 200
     assert not Notification.query.get(1)
-    assert 'http://localhost/dashboard' == rsp.headers['Location']
-
-    auth.logout()
-    auth.login(2)
-
-    rsp = client.post('/notifications/2/delete?next=/projects/2')
-    assert rsp.status_code == 302
-    assert not Notification.query.get(2)
-    assert 'http://localhost/projects/2' == rsp.headers['Location']
+    data = json.loads(resp.data)
+    assert data['success']

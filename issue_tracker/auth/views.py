@@ -1,10 +1,3 @@
-"""All views for auth blueprint.
-
-  Typical usage example:
-
-  from auth import views
-"""
-
 from flask import abort, current_app, redirect, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from six.moves.urllib.parse import urlencode
@@ -21,13 +14,18 @@ def callback():
     Responses:
         302:
             description: Redirect to the location specified in session key 'next'.
+        401:
+            description: New user did not agree to give access to their email and
+                profile.
         403:
             description: Forbidden.
     """
 
+    if request.args.get('error') is not None:
+        abort(401)
+
     client_secret = current_app.config['AUTH0_CLIENT_SECRET']
     auth0 = configure_oauth(client_secret)
-
     # Hard coding callback route in browser would result in various exceptions. Only
     # Auth0 is authorized to access this callback route.
     try:
@@ -35,27 +33,26 @@ def callback():
     except Exception:
         abort(403)
 
-    rsp = auth0.get('userinfo')
-    userinfo = rsp.json()
-
+    resp = auth0.get('userinfo')
+    userinfo = resp.json()
     sub = userinfo['sub']
     user = User.query.filter_by(sub=sub).first()
-
-    if not user:
+    if user is None:
         user = User(
             sub=sub,
             email=userinfo['email'],
+            username=userinfo['https://issue-tracker-7:auth0:com/username'],
             first_name=userinfo['given_name'],
             last_name=userinfo['family_name'],
         )
         db.session.add(user)
         db.session.commit()
-
     login_user(user, remember=True)
 
     next_page = session.pop('next', None)
-    if not next_page:
+    if next_page is None:
         next_page = url_for('index')
+    print(next_page)
     return redirect(next_page)
 
 

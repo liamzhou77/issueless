@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from issue_tracker import auth
 from issue_tracker import errors
 from issue_tracker import main
-from issue_tracker import projects
+from issue_tracker import project
 from issue_tracker.login import login
 from issue_tracker.models import db
 from issue_tracker.oauth import oauth
@@ -27,7 +27,7 @@ def create_app(test_config=None):
         REMEMBER_COOKIE_DURATION=timedelta(days=3, hours=1),
     )
     app.config.from_pyfile('config.py', silent=True)
-    if test_config:
+    if test_config is not None:
         app.config.from_mapping(test_config)
 
     # ensure the instance folder exists
@@ -44,7 +44,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
     app.register_blueprint(errors.bp)
     app.register_blueprint(main.bp)
-    app.register_blueprint(projects.bp)
+    app.register_blueprint(project.bp)
     app.add_url_rule('/dashboard', endpoint='index')
 
     @app.shell_context_processor
