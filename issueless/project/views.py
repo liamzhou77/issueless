@@ -3,10 +3,10 @@ import re
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from issue_tracker.decorators import permission_required
-from issue_tracker.project import bp
-from issue_tracker.models import db, Permission, Project, User
-from issue_tracker.validators import (
+from issueless.decorators import permission_required
+from issueless.project import bp
+from issueless.models import db, Permission, Project, User, UserProject
+from issueless.validators import (
     create_project_validation,
     delete_member_validation,
     invititation_validation,
@@ -164,6 +164,39 @@ def delete(user_project):
     return redirect(url_for('index'))
 
 
+@bp.route('/<int:id>/members')
+@login_required
+@permission_required(Permission.GET_MEMBERS)
+def members(user_project):
+    project = user_project.project
+
+    search_term = request.args.get('search')
+    if search_term is None:
+        user_projects = project.user_projects.order_by(UserProject.role_id).all()
+    else:
+        if search_term[-1] == ' ':
+            search_term = search_term[:-1]
+        ilike_regex = f'{search_term}%'
+        user_projects = (
+            project.user_projects.join(UserProject.user)
+            .filter(
+                User.username.ilike(ilike_regex)
+                | db.func.concat(User.first_name, ' ', User.last_name).ilike(
+                    ilike_regex
+                )
+                | User.email.ilike(ilike_regex)
+            )
+            .order_by(UserProject.role_id)
+            .order_by(db.func.concat(User.first_name, ' ', User.last_name))
+            .all()
+        )
+
+    return {
+        'success': True,
+        'members': [user_project.to_dict() for user_project in user_projects],
+    }
+
+
 @bp.route('/<int:id>/invite', methods=['GET', 'POST'])
 @login_required
 @permission_required(Permission.MANAGE_PROJECT)
@@ -243,44 +276,24 @@ def invite(user_project):
     search_term = request.args.get('search')
     if search_term is None:
         return {'success': True, 'users': []}
-    if (
-        search_term[-1] == ' '
-    ):  # if search_term ends with a whitespace, search without the whitespace
+
+    if search_term[-1] == ' ':
         search_term = search_term[:-1]
-
-    email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-    fullname_regex = r'^[a-zA-Z]{1,50} [a-zA-Z]{1,50}$'
-    username_regex = r'^[a-zA-Z0-9_.+-]{1,15}$'
-    first_name_regex = r'^[a-zA-Z]{16,50}$'
     ilike_regex = f'{search_term}%'
-
-    users = None
-    if re.match(email_regex, search_term):
+    if re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', search_term):
         users = User.query.filter_by(email=search_term).all()
-    elif re.match(username_regex, search_term) or re.match(
-        first_name_regex, search_term
-    ):
+    else:
         users = (
             User.query.filter(
-                User.username.ilike(ilike_regex) | User.first_name.ilike(ilike_regex)
-            )
-            .order_by(User.first_name)
-            .order_by(User.username)
-            .limit(10)
-            .all()
-        )
-    elif re.match(fullname_regex, search_term):
-        users = (
-            User.query.filter(
-                db.func.concat(User.first_name, ' ', User.last_name).ilike(ilike_regex)
+                User.username.ilike(ilike_regex)
+                | db.func.concat(User.first_name, ' ', User.last_name).ilike(
+                    ilike_regex
+                )
             )
             .order_by(db.func.concat(User.first_name, ' ', User.last_name))
             .limit(10)
             .all()
         )
-
-    if users is None:
-        return {'success': True, 'users': []}
 
     return {
         'success': True,

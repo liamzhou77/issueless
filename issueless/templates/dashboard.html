@@ -1,0 +1,120 @@
+{% extends 'base.html' %} {% block content %}
+<section class="card text-white bg-dark mb-3" style="max-width: 18rem;">
+  <div class="card-header">Projects</div>
+  <ul id="project-list" class="list-group list-group-flush">
+    {% for user_project in user_projects %} {% set project =
+    user_project.project %} {% set role_name = user_project.role.name %}
+    <li class="list-group-item p-3 mb-2 bg-light text-dark">
+      <a href="{{ url_for('project.project', id=project.id) }}"
+        >{{ project.title }} - {{ role_name }}</a
+      ><br />
+      {% if role_name == 'Admin' %}
+      <a href="{{ url_for('project.manage', id=project.id) }}">manage</a>
+      <form
+        action="{{ url_for('project.delete', id=project.id) }}"
+        method="POST"
+      >
+        <button type="submit">delete</button>
+      </form>
+      {% else %}
+      <form action="{{ url_for('project.quit', id=project.id) }}" method="POST">
+        <button type="submit">quit</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <button
+    id="create-project-btn"
+    type="button"
+    class="btn btn-primary"
+    data-toggle="modal"
+    data-target="#projectModal"
+  >
+    Create New Project
+  </button>
+</section>
+
+<div
+  class="modal fade"
+  id="projectModal"
+  data-backdrop="static"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="projectModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="projectModalLabel">New Project</h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="project-modal-alert" class="alert" role="alert" hidden>
+          You can only create or join 4 or less projects. Please delete or quit
+          one existing project before you add any more.
+        </div>
+        <form
+          id="create-project-form"
+          action="{{ url_for('project.create') }}"
+          method="POST"
+        >
+          <div class="form-group">
+            <label for="project-title">Project Title</label>
+            <input
+              name="title"
+              type="text"
+              id="project-title"
+              class="form-control"
+              maxlength="50"
+              placeholder="your project's title"
+            />
+          </div>
+          <div class="form-group">
+            <label for="project-description">Project Description</label>
+            <textarea
+              name="description"
+              id="project-description"
+              class="form-control"
+              maxlength="200"
+              placeholder="your project's description"
+              rows="3"
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Close
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          form="create-project-form"
+          disabled
+        >
+          Submit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='/js/dashboard/create_project.js') }}"></script>
+<script>
+  // globals - projectForm
+  if ({{ user_projects.count() }} >= 4) {
+    document.getElementById('project-modal-alert').hidden = false;
+    projectForm[0].disabled = true;
+    projectForm[1].disabled = true;
+  }
+</script>
+{% endblock %}

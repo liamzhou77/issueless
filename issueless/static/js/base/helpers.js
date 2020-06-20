@@ -1,13 +1,12 @@
 function addAlert(message, style) {
   const alert = document.createElement('div');
-  alert.innerHTML =
-    ('afterend',
-    ` <div class="alert alert-${style} fade show" role="alert">
-        ${message}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>`);
+  alert.innerHTML = ` 
+    <div class="alert alert-${style} fade show" role="alert">
+      ${message}
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>`;
   document.querySelector('nav').insertAdjacentElement('afterend', alert);
 
   setTimeout(function () {
@@ -48,7 +47,7 @@ function postFetch(url, successFunc, body) {
       .then((resp) => then(resp))
       .catch((error) => {
         if (error.message === 'Failed to fetch') {
-          window.location.href = '/dashboard';
+          window.location.reload(true);
         }
       });
   } else {
@@ -62,7 +61,7 @@ function postFetch(url, successFunc, body) {
       .then((resp) => then(resp))
       .catch((error) => {
         if (error.message === 'Failed to fetch') {
-          window.location.href = '/dashboard';
+          window.location.reload(true);
         }
       });
   }

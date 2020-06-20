@@ -112,6 +112,16 @@ class UserProject(db.Model):
     def can(self, permission):
         return self.role and self.role.has_permission(permission)
 
+    def to_dict(self):
+        return {
+            'avatar': self.user.avatar(60),
+            'name': self.user.fullname(),
+            'username': self.user.username,
+            'email': self.user.email,
+            'role': self.role.name,
+            'timestamp': self.timestamp,
+        }
+
 
 class Project(db.Model):
     __tablename__ = 'projects'
@@ -146,6 +156,7 @@ class Permission(object):
     READ_PROJECT = 1
     MANAGE_PROJECT = 2
     QUIT_PROJECT = 4
+    GET_MEMBERS = 8
 
 
 class Role(db.Model):
@@ -180,8 +191,16 @@ class Role(db.Model):
     def insert_roles():
         """Inserts roles into databse with their specific permissions."""
         role_permissions = {
-            'Admin': [Permission.READ_PROJECT, Permission.MANAGE_PROJECT],
-            'Reviewer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
+            'Admin': [
+                Permission.READ_PROJECT,
+                Permission.MANAGE_PROJECT,
+                Permission.GET_MEMBERS,
+            ],
+            'Reviewer': [
+                Permission.READ_PROJECT,
+                Permission.QUIT_PROJECT,
+                Permission.GET_MEMBERS,
+            ],
             'Developer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
         }
 
@@ -222,3 +241,12 @@ class Notification(db.Model):
 
     def get_data(self):
         return json.loads(str(self.payload_json))
+
+    def to_dict(self):
+        return {
+            'notificationId': self.id,
+            'name': self.name,
+            'targetId': self.target_id,
+            'data': self.get_data(),
+            'timestamp': self.timestamp,
+        }

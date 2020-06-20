@@ -1,4 +1,4 @@
-from issue_tracker.models import Permission, Role
+from issueless.models import Permission, Role
 
 # TODO: add tests
 

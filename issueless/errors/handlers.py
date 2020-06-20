@@ -1,8 +1,8 @@
 from flask import render_template
 
-from issue_tracker.errors import bp
-from issue_tracker.errors.errors import ValidationError
-from issue_tracker.models import db
+from issueless.errors import bp
+from issueless.errors.errors import ValidationError
+from issueless.models import db
 
 
 @bp.app_errorhandler(400)

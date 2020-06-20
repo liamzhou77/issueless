@@ -2,9 +2,9 @@ from flask import abort, current_app, redirect, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 from six.moves.urllib.parse import urlencode
 
-from issue_tracker.auth import bp
-from issue_tracker.models import db, User
-from issue_tracker.oauth import configure_oauth
+from issueless.auth import bp
+from issueless.models import db, User
+from issueless.oauth import configure_oauth
 
 
 @bp.route('/callback')

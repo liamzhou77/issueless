@@ -76,7 +76,7 @@ function generateNotifications() {
     })
     .catch((error) => {
       if (error.message === 'Failed to fetch') {
-        window.location.href = '/dashboard';
+        window.location.reload(true);
       }
     });
 }

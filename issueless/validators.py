@@ -1,7 +1,7 @@
 from flask_login import current_user
 
-from issue_tracker.errors.errors import ValidationError
-from issue_tracker.models import Role, User
+from issueless.errors.errors import ValidationError
+from issueless.models import Role, User
 
 
 def create_project_validation(title, description):

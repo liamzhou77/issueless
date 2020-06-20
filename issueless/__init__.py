@@ -4,13 +4,13 @@ import os
 from flask import Flask
 from flask_migrate import Migrate
 
-from issue_tracker import auth
-from issue_tracker import errors
-from issue_tracker import main
-from issue_tracker import project
-from issue_tracker.login import login
-from issue_tracker.models import db
-from issue_tracker.oauth import oauth
+from issueless import auth
+from issueless import errors
+from issueless import main
+from issueless import project
+from issueless.login import login
+from issueless.models import db
+from issueless.oauth import oauth
 
 
 def create_app(test_config=None):
@@ -20,7 +20,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         SQLALCHEMY_DATABASE_URI=(
-            'sqlite:///' + os.path.join(app.instance_path, 'issue_tracker.db')
+            'sqlite:///' + os.path.join(app.instance_path, 'issueless.db')
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         USE_SESSION_FOR_NEXT=True,
@@ -50,7 +50,7 @@ def create_app(test_config=None):
     @app.shell_context_processor
     def make_shell_context():
         """Defines shell context for debugging."""
-        from issue_tracker.models import Notification, Project, Role, User, UserProject
+        from issueless.models import Notification, Project, Role, User, UserProject
 
         return {
             'db': db,

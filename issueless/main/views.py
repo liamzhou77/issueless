@@ -1,8 +1,8 @@
 from flask import abort, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
-from issue_tracker.main import bp
-from issue_tracker.models import db, UserProject, Notification
+from issueless.main import bp
+from issueless.models import db, UserProject, Notification
 
 
 @bp.route('/')
@@ -48,16 +48,7 @@ def notifications():
     ).all()
     return {
         'success': True,
-        'notifications': [
-            {
-                'notificationId': n.id,
-                'name': n.name,
-                'targetId': n.target_id,
-                'data': n.get_data(),
-                'timestamp': n.timestamp,
-            }
-            for n in notifications
-        ],
+        'notifications': [notification.to_dict() for notification in notifications],
     }
 
 

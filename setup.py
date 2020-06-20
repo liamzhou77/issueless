@@ -4,17 +4,15 @@ requires = [
     'flask',
     'authlib',
     'flask-login',
-    'flask-wtf',
     'flask-migrate',
     'flask-sqlalchemy',
     'psycopg2',
     'requests',
-    'six',
     'python-dotenv',
 ]
 
 setup(
-    name='issue_tracker',
+    name='issueless',
     version='1.0.0',
     packages=find_packages(),
     include_package_data=True,

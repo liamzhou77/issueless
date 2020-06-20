@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-from issue_tracker import create_app
-from issue_tracker.models import db, Role
+from issueless import create_app
+from issueless.models import db, Role
 
 with open(os.path.join(os.path.dirname(__file__), 'data.sql'), 'rb') as f:
     _data_sql = f.read().decode('utf8')
@@ -16,7 +16,7 @@ def app():
         {
             'TESTING': True,
             'SQLALCHEMY_DATABASE_URI': (
-                'postgresql://liamzhou@localhost/test_issue_tracker'
+                'postgresql://liamzhou@localhost/test_issueless'
             ),
             'WTF_CSRF_ENABLED': False,
         }

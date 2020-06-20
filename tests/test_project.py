@@ -1,6 +1,6 @@
 import json
 
-from issue_tracker.models import db, Notification, Project, User, UserProject
+from issueless.models import db, Notification, Project, User, UserProject
 
 
 def test_project(client, auth):
@@ -428,3 +428,64 @@ def test_valid_delete_member(client, auth):
     assert (
         Notification.query.filter_by(name='user removed', user_id=2).first() is not None
     )
+
+
+def test_members(client, auth):
+    auth.login(1)
+
+    resp = client.get('/projects/1/members')
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data['success']
+    assert data['members'] == [
+        {
+            'avatar': 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc'
+            '?d=identicon&s=60',
+            'name': 'David Johnson',
+            'username': 'test_username_1',
+            'email': 'test1@gmail.com',
+            'role': 'Admin',
+            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
+        },
+        {
+            'avatar': 'https://www.gravatar.com/avatar/3c4f419e8cd958690d0d14b3b89380d3'
+            '?d=identicon&s=60',
+            'name': 'Wade Tom',
+            'username': 'test_username_2',
+            'email': 'test2@gmail.com',
+            'role': 'Reviewer',
+            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
+        },
+    ]
+
+    resp = client.get('/projects/1/members?search=wade%20')
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data['success']
+    assert data['members'] == [
+        {
+            'avatar': 'https://www.gravatar.com/avatar/3c4f419e8cd958690d0d14b3b89380d3'
+            '?d=identicon&s=60',
+            'name': 'Wade Tom',
+            'username': 'test_username_2',
+            'email': 'test2@gmail.com',
+            'role': 'Reviewer',
+            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
+        }
+    ]
+
+    resp = client.get('/projects/1/members?search=test1@')
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data['success']
+    assert data['members'] == [
+        {
+            'avatar': 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc'
+            '?d=identicon&s=60',
+            'name': 'David Johnson',
+            'username': 'test_username_1',
+            'email': 'test1@gmail.com',
+            'role': 'Admin',
+            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
+        }
+    ]

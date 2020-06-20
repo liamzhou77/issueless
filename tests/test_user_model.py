@@ -1,4 +1,4 @@
-from issue_tracker.models import db, Project, User
+from issueless.models import db, Project, User
 
 
 def test_avatar(app):

@@ -1,6 +1,6 @@
 from flask_login import LoginManager
 
-from issue_tracker.models import User
+from issueless.models import User
 
 login = LoginManager()
 

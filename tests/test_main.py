@@ -1,6 +1,6 @@
 import json
 
-from issue_tracker.models import Notification
+from issueless.models import Notification
 
 
 def test_index(client, auth):
