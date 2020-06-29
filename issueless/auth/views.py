@@ -1,4 +1,4 @@
-from flask import abort, current_app, redirect, request, session, url_for
+from flask import abort, current_app, redirect, request, url_for
 from flask_login import current_user, login_user, logout_user
 from six.moves.urllib.parse import urlencode
 
@@ -13,7 +13,7 @@ def callback():
 
     Responses:
         302:
-            description: Redirect to the location specified in session key 'next'.
+            description: Redirect to the dashboard page.
         401:
             description: New user did not agree to give access to their email and
                 profile.
@@ -49,11 +49,7 @@ def callback():
         db.session.commit()
     login_user(user, remember=True)
 
-    next_page = session.pop('next', None)
-    if next_page is None:
-        next_page = url_for('index')
-    print(next_page)
-    return redirect(next_page)
+    return redirect(url_for('index'))
 
 
 @bp.route('/login')

@@ -16,14 +16,16 @@ def create_project_validation(title, description):
     """
 
     error = _project_validation(title, description)
-    if error is None and current_user.user_projects.count() >= 4:
-        error = 'You can only create or join 4 or less projects. Please delete or quit '
-        'one existing project before you add any more.'
+    if error is None and current_user.user_projects.count() >= 8:
+        error = (
+            'You can only have 8 or less projects. Please leave one existing '
+            'project before you add any more.'
+        )
     return error
 
 
-def update_project_validation(project, title, description):
-    """Checks if a project's title and description are valid before update.
+def edit_project_validation(project, title, description):
+    """Checks if a project's title and description are valid before edit.
 
     Args:
         project: A project to be validated.
@@ -46,8 +48,8 @@ def _project_validation(title, description):
     error = None
     if not title:
         error = "Please provide your project's title."
-    elif len(title) > 50:
-        error = "Project's title can not be more than 50 character."
+    elif len(title) > 40:
+        error = "Project's title can not be more than 40 character."
     elif not description:
         error = "Please provide your project's description."
     elif len(description) > 200:
@@ -55,12 +57,12 @@ def _project_validation(title, description):
     return error
 
 
-def invititation_validation(project, username, role_name):
+def invititation_validation(project, target, role_name):
     """Checks if an invitation is valid.
 
     Args:
         project: The project to be invited to.
-        username: The invited user's username.
+        target: The invited user's username or email address.
         role_name: The role's name to be assigned.
 
     Returns:
@@ -71,22 +73,22 @@ def invititation_validation(project, username, role_name):
             description: Validation error.
     """
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter((User.username == target) | (User.email == target)).first()
     role = Role.query.filter_by(name=role_name).first()
 
-    error = None
-    if user is None:
-        error = 'Please provide a valid username.'
-    elif role is None or role.name == 'Admin':
-        error = 'Please provide a valid role.'
-    elif user == current_user:
-        error = 'You can not invite yourself to your project.'
-    elif user in project.users:
-        error = 'User is already a member of the project.'
-    elif project.user_projects.count() >= 30:
-        error = 'You can only have 30 or less members in one project.'
-    if error is not None:
-        raise ValidationError(error)
+    if role is None or role.name == 'Admin':
+        raise ValidationError('Please provide a valid role.')
+
+    if user is not None:
+        error = None
+        if user == current_user:
+            error = 'You can not invite yourself to your project.'
+        elif user in project.users:
+            error = 'User is already a member of the project.'
+        elif project.user_projects.count() >= 30:
+            error = 'You can only have 30 or less members in one project.'
+        if error is not None:
+            raise ValidationError(error)
 
     return user
 
@@ -102,16 +104,15 @@ def join_project_validation(project):
             description: Validation error.
     """
 
-    if current_user.user_projects.count() >= 4:
+    if project is None:
+        raise ValidationError('The project has been removed.')
+    if current_user.user_projects.count() >= 8:
         raise ValidationError(
-            'You can only create or join 4 or less projects. Please delete or quit '
-            'one existing project before you add any more.'
+            'You can only have 8 or less projects. Please leave one existing project '
+            'before you add any more.'
         )
     elif project.user_projects.count() >= 30:
-        raise ValidationError(
-            'Failed to join the project. The project does not have any remaining '
-            'spot.'
-        )
+        raise ValidationError('The project does not have any remaining spot.')
 
 
 def delete_member_validation(project, user):

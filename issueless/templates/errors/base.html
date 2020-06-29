@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>500 Internal Server Error</title>
+    <title>{% block title %}{% endblock %}</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -23,12 +23,16 @@
           <div class="col-xl-5 col-lg-6 col-md-7">
             <div class="text-center">
               <h1 class="display-1 text-primary">
-                5&#x1f635;&#x1f635;
+                {% block header %}{% endblock %}
               </h1>
               <p>
-                An unexpected error has occurred.The administrator has been
-                notified.
-                <a href="{{ url_for('index') }}">Click here to go home</a>
+                {% block description %}{% endblock %}
+                <a href="{{ url_for('index') }}">Click here to go home</a> or
+                Email
+                <a href="mailto: zhouchengzhong77@gmail.com"
+                  >zhouchengzhong77@gmail.com</a
+                >
+                if you think this might be an error.
               </p>
             </div>
           </div>

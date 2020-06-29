@@ -31,17 +31,17 @@ VALUES
   ('test_title_3', 'test_description_3');
 
 INSERT INTO
-  user_project (user_id, project_id, role_id, timestamp)
+  user_project (user_id, project_id, role_id)
 VALUES
   -- User 1 is admin in project 1, reviewer in project 2, developer in project 3
-  (1, 1, 1, '2020-06-05 04:00:27.219008'),
-  (1, 2, 2, '2020-06-05 04:00:27.219008'),
-  (1, 3, 3, '2020-06-05 04:00:27.219008'),
+  (1, 1, 1),
+  (1, 2, 2),
+  (1, 3, 3),
   -- User 2 is reviewer in project 1, admin in project 2
-  (2, 1, 2, '2020-06-05 04:00:27.219008'),
-  (2, 2, 1, '2020-06-05 04:00:27.219008'),
+  (2, 1, 2),
+  (2, 2, 1),
   -- User 3 is admin in project 3
-  (3, 3, 1, '2020-06-05 04:00:27.219008');
+  (3, 3, 1);
 
 INSERT INTO
   notifications (
@@ -49,7 +49,8 @@ INSERT INTO
     target_id,
     user_id,
     timestamp,
-    payload_json
+    payload_json,
+    is_read
   )
 VALUES
   -- User 3 received an invitation to project 2
@@ -57,14 +58,16 @@ VALUES
     'invitation',
     2,
     3,
-    '2020-06-02 05:59:22.344978',
-    '{"invitorName": "Wade Tom", "projectTitle": "test_title_2", "roleName": "Developer"}'
+    '1593406929.172222',
+    '{"invitorName": "Wade Tom", "projectTitle": "test_title_2", "roleName": "Developer"}',
+    FALSE
   ),
   -- User 2 received an invitation to project 3
   (
     'invitation',
     3,
     2,
-    '2020-06-02 05:59:22.344978',
-    '{"invitorName": "Ryan Cooper", "projectTitle": "test_title_3", "roleName": "Developer"}'
+    '1593406942.200693',
+    '{"invitorName": "Ryan Cooper", "projectTitle": "test_title_3", "roleName": "Developer"}',
+    FALSE
   );

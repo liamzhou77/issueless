@@ -9,12 +9,6 @@ def test_project(client, auth):
     assert client.get('/projects/1').status_code == 200
 
 
-def test_manage(client, auth):
-    auth.login(1)
-
-    assert client.get('/projects/1/manage').status_code == 200
-
-
 def test_invalid_create(client, auth):
     auth.login(1)
 
@@ -33,12 +27,12 @@ def test_invalid_create(client, auth):
     resp = client.post(
         '/projects/create',
         data={
-            'title': 'This is a title with more than 50 characters...........',
+            'title': 'This is a title with more than 40 characters...........',
             'description': 'awds',
         },
         follow_redirects=True,
     )
-    assert b'Project&#39;s title can not be more than 50 character.' in resp.data
+    assert b'Project&#39;s title can not be more than 40 character.' in resp.data
 
     resp = client.post(
         '/projects/create',
@@ -76,33 +70,34 @@ def test_valid_create(client, auth):
     assert new_project.description == 'test_description_4'
     assert 'http://localhost/dashboard' == resp.headers['Location']
 
-    # test add fifth project
+    for i in range(5, 9):
+        client.post(
+            '/projects/create',
+            data={'title': f'test_title_{i}', 'description': f'test_description_{i}'},
+        )
     resp = client.post(
         '/projects/create',
-        data={'title': 'test_title_5', 'description': 'test_description_5'},
+        data={'title': 'test_title_9', 'description': 'test_description_9'},
         follow_redirects=True,
     )
     user_projects = User.query.get(1).user_projects
-    assert user_projects.count() == 4
-    assert (
-        b'You can only create or join 4 or less projects. Please delete or quit one '
-        b'existing project before you add any more.' in resp.data
-    )
+    assert user_projects.count() == 8
+    assert b'You can only have 8 or less projects.' in resp.data
 
 
-def test_invalid_update(client, auth):
+def test_invalid_edit(client, auth):
     auth.login(1)
 
-    assert client.post('/projects/1/update', json={}).status_code == 400
+    assert client.post('/projects/1/edit', json={}).status_code == 400
 
-    resp = client.post('/projects/1/update', json={'title': '', 'description': ''})
+    resp = client.post('/projects/1/edit', json={'title': '', 'description': ''})
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
     assert data['error'] == "Please provide your project's title."
 
     resp = client.post(
-        '/projects/1/update', json={'title': 'test_title', 'description': ''}
+        '/projects/1/edit', json={'title': 'test_title', 'description': ''}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -110,19 +105,19 @@ def test_invalid_update(client, auth):
     assert data['error'] == "Please provide your project's description."
 
     resp = client.post(
-        '/projects/1/update',
+        '/projects/1/edit',
         json={
-            'title': 'This is a title with more than 50 characters...........',
+            'title': 'This is a title with more than 40 characters...........',
             'description': 'awds',
         },
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
-    assert data['error'] == "Project's title can not be more than 50 character."
+    assert data['error'] == "Project's title can not be more than 40 character."
 
     resp = client.post(
-        '/projects/1/update',
+        '/projects/1/edit',
         json={
             'title': 'awdsad.',
             'description': (
@@ -138,7 +133,7 @@ def test_invalid_update(client, auth):
     assert data['error'] == "Project's description can not be more than 200 characters."
 
     resp = client.post(
-        '/projects/1/update',
+        '/projects/1/edit',
         json={'title': 'test_title_1', 'description': 'test_description_1'},
     )
     assert resp.status_code == 422
@@ -147,11 +142,11 @@ def test_invalid_update(client, auth):
     assert data['error'] == 'No changes have been made.'
 
 
-def test_update_with_valid_data(client, auth):
+def test_edit_with_valid_data(client, auth):
     auth.login(1)
 
     resp = client.post(
-        '/projects/1/update',
+        '/projects/1/edit',
         json={'title': 'modified_title', 'description': 'modified_description'},
     )
     assert resp.status_code == 200
@@ -197,21 +192,21 @@ def test_invite_get(client, auth):
             'fullname': 'David Johnson',
             'username': 'test_username_1',
             'avatar': 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc'
-            '?d=identicon&s=60',
+            '?d=identicon&s=68',
             'joined': True,
         },
         {
             'fullname': 'Ryan Cooper',
             'username': 'test_username_3',
             'avatar': 'https://www.gravatar.com/avatar/19f84906f4412abf6066aaa92fe9d6c1'
-            '?d=identicon&s=60',
+            '?d=identicon&s=68',
             'joined': False,
         },
         {
             'fullname': 'Wade Tom',
             'username': 'test_username_2',
             'avatar': 'https://www.gravatar.com/avatar/3c4f419e8cd958690d0d14b3b89380d3'
-            '?d=identicon&s=60',
+            '?d=identicon&s=68',
             'joined': True,
         },
     ]
@@ -224,7 +219,7 @@ def test_invite_get(client, auth):
             'fullname': 'David Johnson',
             'username': 'test_username_1',
             'avatar': 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc'
-            '?d=identicon&s=60',
+            '?d=identicon&s=68',
             'joined': True,
         }
     ]
@@ -237,45 +232,19 @@ def test_invite_get(client, auth):
             'fullname': 'Wade Tom',
             'username': 'test_username_2',
             'avatar': 'https://www.gravatar.com/avatar/3c4f419e8cd958690d0d14b3b89380d3'
-            '?d=identicon&s=60',
-            'joined': True,
-        }
-    ]
-
-    resp = client.get('/projects/1/invite?search=test1@gmail.c')
-    assert resp.status_code == 200
-    data = json.loads(resp.data)
-    assert not data['users']
-
-    resp = client.get('/projects/1/invite?search=test1@gmail.com')
-    assert resp.status_code == 200
-    data = json.loads(resp.data)
-    assert data['users'] == [
-        {
-            'fullname': 'David Johnson',
-            'username': 'test_username_1',
-            'avatar': 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc'
-            '?d=identicon&s=60',
+            '?d=identicon&s=68',
             'joined': True,
         }
     ]
 
 
-def test_invalid_invitation_post(client, auth):
+def test_invalid_invite_post(client, auth):
     auth.login(1)
 
     assert client.post('/projects/1/invite', json={}).status_code == 400
 
     resp = client.post(
-        '/projects/1/invite', json={'username': 'unknown', 'role': 'Developer'}
-    )
-    assert resp.status_code == 422
-    data = json.loads(resp.data)
-    assert not data['success']
-    assert data['error'] == 'Please provide a valid username.'
-
-    resp = client.post(
-        '/projects/1/invite', json={'username': 'test_username_3', 'role': 'Unknown'}
+        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Unknown'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -283,7 +252,7 @@ def test_invalid_invitation_post(client, auth):
     assert data['error'] == 'Please provide a valid role.'
 
     resp = client.post(
-        '/projects/1/invite', json={'username': 'test_username_3', 'role': 'Admin'}
+        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Admin'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -291,7 +260,7 @@ def test_invalid_invitation_post(client, auth):
     assert data['error'] == 'Please provide a valid role.'
 
     resp = client.post(
-        '/projects/1/invite', json={'username': 'test_username_1', 'role': 'Reviewer'}
+        '/projects/1/invite', json={'target': 'test_username_1', 'role': 'Reviewer'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -299,7 +268,7 @@ def test_invalid_invitation_post(client, auth):
     assert data['error'] == 'You can not invite yourself to your project.'
 
     resp = client.post(
-        '/projects/1/invite', json={'username': 'test_username_2', 'role': 'Reviewer'}
+        '/projects/1/invite', json={'target': 'test_username_2', 'role': 'Reviewer'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -321,7 +290,7 @@ def test_invalid_invitation_post(client, auth):
     assert project.user_projects.count() == 30
 
     resp = client.post(
-        '/projects/1/invite', json={'username': 'test_username_3', 'role': 'Developer'}
+        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Developer'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -333,7 +302,7 @@ def test_valid_invite_post(client, auth):
     auth.login(1)
 
     resp = client.post(
-        '/projects/1/invite', json={'username': 'test_username_3', 'role': 'Developer'}
+        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Developer'}
     )
     assert resp.status_code == 200
     data = json.loads(resp.data)
@@ -344,13 +313,18 @@ def test_valid_invite_post(client, auth):
     assert notification.target_id == 1
     assert notification.user_id == 3
     data = notification.get_data()
-    assert data['invitorName'] == 'David Johnson'
+    assert (
+        data['avatar']
+        == 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc?d='
+        'identicon&s=68'
+    )
+    assert data['fullname'] == 'David Johnson'
     assert data['projectTitle'] == 'test_title_1'
     assert data['roleName'] == 'Developer'
     timestamp = notification.timestamp
 
     resp = client.post(
-        '/projects/1/invite', json={'username': 'test_username_3', 'role': 'Developer'}
+        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Developer'}
     )
     assert resp.status_code == 200
     data = json.loads(resp.data)
@@ -358,12 +332,29 @@ def test_valid_invite_post(client, auth):
     notification = Notification.query.get(4)
     assert notification.timestamp > timestamp
     assert Notification.query.get(3) is None
+    timestamp = notification.timestamp
+
+    resp = client.post(
+        '/projects/1/invite', json={'target': 'test10@gmail.com', 'role': 'Developer'},
+    )
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data['success']
+
+    resp = client.post(
+        '/projects/1/invite', json={'target': 'test3@gmail.com', 'role': 'Developer'},
+    )
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data['success']
+    notification = Notification.query.get(5)
+    assert notification.timestamp > timestamp
+    assert Notification.query.get(4) is None
 
 
 def test_invalid_join(client, auth):
     auth.login(3)
 
-    assert client.post('/projects/4/join').status_code == 404
     assert client.post('/projects/1/join').status_code == 403
 
 
@@ -428,64 +419,3 @@ def test_valid_delete_member(client, auth):
     assert (
         Notification.query.filter_by(name='user removed', user_id=2).first() is not None
     )
-
-
-def test_members(client, auth):
-    auth.login(1)
-
-    resp = client.get('/projects/1/members')
-    assert resp.status_code == 200
-    data = json.loads(resp.data)
-    assert data['success']
-    assert data['members'] == [
-        {
-            'avatar': 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc'
-            '?d=identicon&s=60',
-            'name': 'David Johnson',
-            'username': 'test_username_1',
-            'email': 'test1@gmail.com',
-            'role': 'Admin',
-            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
-        },
-        {
-            'avatar': 'https://www.gravatar.com/avatar/3c4f419e8cd958690d0d14b3b89380d3'
-            '?d=identicon&s=60',
-            'name': 'Wade Tom',
-            'username': 'test_username_2',
-            'email': 'test2@gmail.com',
-            'role': 'Reviewer',
-            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
-        },
-    ]
-
-    resp = client.get('/projects/1/members?search=wade%20')
-    assert resp.status_code == 200
-    data = json.loads(resp.data)
-    assert data['success']
-    assert data['members'] == [
-        {
-            'avatar': 'https://www.gravatar.com/avatar/3c4f419e8cd958690d0d14b3b89380d3'
-            '?d=identicon&s=60',
-            'name': 'Wade Tom',
-            'username': 'test_username_2',
-            'email': 'test2@gmail.com',
-            'role': 'Reviewer',
-            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
-        }
-    ]
-
-    resp = client.get('/projects/1/members?search=test1@')
-    assert resp.status_code == 200
-    data = json.loads(resp.data)
-    assert data['success']
-    assert data['members'] == [
-        {
-            'avatar': 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc'
-            '?d=identicon&s=60',
-            'name': 'David Johnson',
-            'username': 'test_username_1',
-            'email': 'test1@gmail.com',
-            'role': 'Admin',
-            'timestamp': 'Fri, 05 Jun 2020 04:00:27 GMT',
-        }
-    ]

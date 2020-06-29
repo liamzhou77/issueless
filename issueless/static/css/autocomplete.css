@@ -1,0 +1,43 @@
+.autocomplete {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  z-index: 99;
+  top: 135%;
+  left: 0;
+  right: 0;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.autocomplete-list img,
+.autocomplete-selected img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #f8f9fa;
+  color: #fff;
+}
+
+.autocomplete-list i {
+  font-size: 2rem;
+}
+
+.bg-gray {
+  background-color: #f6f8fa !important;
+}
+
+.autocomplete-active {
+  background-color: #f8f9fa;
+}
+
+.autocomplete-selected {
+  color: #0366d6;
+  background-color: #f1f8ff;
+  border-color: #c8e1ff !important;
+  border-radius: 6px;
+}

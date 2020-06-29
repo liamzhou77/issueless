@@ -34,3 +34,23 @@ def internal_server_error(error):
 @bp.app_errorhandler(ValidationError)
 def form_validation_error(error):
     return {'success': False, 'error': error.error}, 422
+
+
+@bp.route('/400')
+def bad_request_page():
+    return render_template('/errors/400.html')
+
+
+@bp.route('/401')
+def unauthorized_page():
+    return render_template('/errors/401.html')
+
+
+@bp.route('/403')
+def forbidden_page():
+    return render_template('/errors/403.html')
+
+
+@bp.route('/500')
+def internal_server_error_page():
+    return render_template('/errors/500.html')

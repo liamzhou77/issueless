@@ -1,17 +1,18 @@
-from datetime import datetime
 from hashlib import md5
 import json
+from time import time
 
-from flask_login import UserMixin
+from flask_login import current_user, UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.associationproxy import association_proxy
+
 
 db = SQLAlchemy()
 
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
-    __table_args__ = (db.Index('user_name', 'first_name', 'last_name'),)
+    __table_args__ = (db.Index('full_name', 'first_name', 'last_name'),)
 
     id = db.Column(db.Integer, primary_key=True)
     sub = db.Column(db.String(), unique=True, nullable=False)
@@ -41,18 +42,15 @@ class User(UserMixin, db.Model):
         user_project = UserProject(user=self, project=project, role=role)
         db.session.add(user_project)
 
-    def avatar(self, size):
+    def avatar(self):
         """Generates the avatar link for user.
-
-        Args:
-            size: A number indicating the size of the avatar.
 
         Returns:
             A string of the avatar url.
         """
 
         digest = md5(self.email.lower().encode()).hexdigest()
-        return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
+        return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s=68'
 
     def add_notification(self, name, data, target_id=None):
         """Adds a new notification.
@@ -77,6 +75,16 @@ class User(UserMixin, db.Model):
         )
         db.session.add(new_notification)
 
+    def add_basic_notification(self, name, title):
+        self.add_notification(
+            name,
+            {
+                'avatar': current_user.avatar(),
+                'fullname': current_user.fullname(),
+                'projectTitle': title,
+            },
+        )
+
     def fullname(self):
         return f'{self.first_name} {self.last_name}'
 
@@ -88,9 +96,6 @@ class UserProject(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
     role_id = db.Column(
         db.Integer, db.ForeignKey('roles.id'), index=True, nullable=False
-    )
-    timestamp = db.Column(
-        db.DateTime, index=True, default=datetime.utcnow, nullable=False
     )
 
     user = db.relationship(
@@ -114,12 +119,11 @@ class UserProject(db.Model):
 
     def to_dict(self):
         return {
-            'avatar': self.user.avatar(60),
+            'avatar': self.user.avatar(),
             'name': self.user.fullname(),
             'username': self.user.username,
             'email': self.user.email,
             'role': self.role.name,
-            'timestamp': self.timestamp,
         }
 
 
@@ -127,7 +131,7 @@ class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(40), nullable=False)
     description = db.Column(db.String(200), nullable=False)
 
     users = association_proxy('user_projects', 'user')
@@ -221,6 +225,7 @@ class Role(db.Model):
 
 class Notification(db.Model):
     __tablename__ = 'notifications'
+    __table_args__ = (db.Index('timestamp', 'is_read'),)
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), index=True, nullable=False)
@@ -228,10 +233,9 @@ class Notification(db.Model):
         db.Integer
     )  # Representing what instance is the notification about
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    timestamp = db.Column(
-        db.DateTime, index=True, default=datetime.utcnow, nullable=False
-    )
+    timestamp = db.Column(db.Float, index=True, default=time, nullable=False)
     payload_json = db.Column(db.Text)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
 
     def __repr__(self):
         return (
@@ -249,4 +253,5 @@ class Notification(db.Model):
             'targetId': self.target_id,
             'data': self.get_data(),
             'timestamp': self.timestamp,
+            "isRead": self.is_read,
         }

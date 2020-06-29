@@ -1,8 +1,220 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% import 'macros.html' as macros %} {% set project =
+user_project.project %} {% set role = user_project.role.name %} {% block header
+%}<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='/css/autocomplete.css') }}"
+/>{% endblock %} {% block breadcrumb %} {{ macros.breadcrumb([('Dashboard',
+url_for('index')), ('Project', None)]) }}
+<div class="dropdown">
+  <button
+    class="btn btn-round"
+    role="button"
+    data-toggle="dropdown"
+    aria-expanded="false"
+  >
+    <i class="material-icons">settings</i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    {% if role == 'Admin' %}
+    <a
+      class="dropdown-item"
+      href="#"
+      data-toggle="modal"
+      data-target="#project-edit-modal"
+      >Edit Project</a
+    >
+    <div class="dropdown-divider"></div>
+    <form action="{{ url_for('project.delete', id=project.id) }}" method="POST">
+      <button type="submit" class="dropdown-item btn-link text-danger">
+        Delete Project
+      </button>
+    </form>
+    {% else %}
+    <form action="{{ url_for('project.quit', id=project.id) }}" method="POST">
+      <button type="submit" class="dropdown-item btn-link text-danger">
+        Leave Project
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} {% block content %}
+<div class="page-header">
+  <h1 class="text-truncate">{{ project.title }}</h1>
+  <p class="lead">{{ project.description }}</p>
+  <div class="d-flex align-items-center">
+    {% include '_avatar_list.html' %}
+    <button
+      class="btn btn-round"
+      data-toggle="modal"
+      data-target="#user-invite-modal"
+    >
+      <i class="material-icons">add</i>
+    </button>
+  </div>
+</div>
 
-{% block content %}
-  {% set project = user_project.project %}
-  {% set role_name = user_project.role.name %}
-  <h1>{{ project.title }}</h1>
-  <p>{{ project.description }}</p>
+<form
+  class="modal fade"
+  id="user-invite-modal"
+  tabindex="-1"
+  aria-hidden="true"
+  action="{{ url_for('project.invite', id=project.id) }}"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Invite User</h5>
+        <button
+          type="button"
+          class="close btn btn-round"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <!--end of modal head-->
+      <div class="modal-body">
+        <p class="text-dark">
+          Send an invitation to add a new member to this project
+        </p>
+        <div>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">
+                <i class="material-icons">search</i>
+              </span>
+            </div>
+            <input
+              type="text"
+              class="form-control autocomplete"
+              placeholder="Recipient fullname, username or email address"
+              autocomplete="off"
+              data-project-title="{{ project.title }}"
+            />
+            <div class="list-group autocomplete-list border" hidden></div>
+          </div>
+        </div>
+        <div class="autocomplete-selected border p-2" hidden>
+          <div class="media media-member mb-0">
+            <img src="{{ user_project.user.avatar() }}" alt="asd" />
+            <div class="media-body text-small">
+              <strong class="mb-0 d-block text-dark">Liam Zhou</strong>
+              <span>liamzhou77</span>
+            </div>
+            <a href="#" class="material-icons ml-auto">close</a>
+          </div>
+        </div>
+        <div class="mt-2">
+          <span class="text-dark">Select a role</span>
+          <div class="form-check pt-2">
+            <input
+              type="radio"
+              id="role-reviewer"
+              class="form-check-input"
+              value="Reviewer"
+              name="role"
+              checked
+            />
+            <div class="ml-2">
+              <label
+                class="form-check-label d-block text-dark font-weight-bolder"
+                for="role-reviewer"
+                >Reviewer</label
+              >
+              <span class="text-small"
+                >Can review submissions and manage issue.</span
+              >
+            </div>
+          </div>
+          <div class="form-check py-2">
+            <input
+              type="radio"
+              id="role-developer"
+              class="form-check-input"
+              value="Developer"
+              name="role"
+            />
+            <div class="ml-2">
+              <label
+                class="form-check-label d-block text-dark font-weight-bolder"
+                for="role-developer"
+              >
+                Developer
+              </label>
+              <span class="text-small"
+                >Can only create new issues and make submissions.</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--end of modal body-->
+      <div class="modal-footer">
+        <button role="button" class="btn btn-primary" type="submit" disabled>
+          Invite user
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<form
+  class="modal fade"
+  id="project-edit-modal"
+  tabindex="-1"
+  aria-hidden="true"
+  action="{{ url_for('project.edit', id=project.id) }}"
+  data-original-title="{{ project.title }}"
+  data-original-description="{{ project.description }}"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Project</h5>
+        <button
+          type="button"
+          class="close btn btn-round"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h6>Project Details</h6>
+        <div class="form-group row align-items-center">
+          <label class="col-3">Title</label>
+          <input
+            class="form-control col"
+            type="text"
+            placeholder="Project title"
+            maxlength="40"
+            value="{{ project.title }}"
+          />
+        </div>
+        <div class="form-group row">
+          <label class="col-3">Description</label>
+          <textarea
+            class="form-control col"
+            maxlength="200"
+            rows="3"
+            placeholder="Project description"
+          >
+{{ project.description }}</textarea
+          >
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button role="button" class="btn btn-primary" type="submit" disabled>
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='/js/project/edit_project.js') }}"></script>
+<script src="{{ url_for('static', filename='/js/project/invite_user.js') }}"></script>
 {% endblock %}

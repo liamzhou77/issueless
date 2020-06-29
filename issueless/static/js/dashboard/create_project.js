@@ -1,10 +1,14 @@
-function disableSubmitBtn() {
-  if (this[0].value.length === 0 || this[1].value.length === 0) {
-    this[2].disabled = true;
+function disableCreateBtn() {
+  const title = this[1].value;
+  const description = this[2].value;
+  const submitBtn = this[3];
+  if (title.length === 0 || description.length === 0) {
+    submitBtn.disabled = true;
   } else {
-    this[2].disabled = false;
+    submitBtn.disabled = false;
   }
 }
 
-const projectForm = document.getElementById('create-project-form');
-projectForm.addEventListener('input', disableSubmitBtn);
+document
+  .getElementById('project-create-modal')
+  .addEventListener('input', disableCreateBtn);

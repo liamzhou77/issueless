@@ -3,9 +3,9 @@ from issueless.models import db, Project, User
 
 def test_avatar(app):
     user = User.query.filter_by(email='test1@gmail.com').first()
-    assert user.avatar(128) == (
+    assert user.avatar() == (
         'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc?d='
-        'identicon&s=128'
+        'identicon&s=68'
     )
 
 

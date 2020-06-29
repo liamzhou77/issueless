@@ -23,7 +23,6 @@ def create_app(test_config=None):
             'sqlite:///' + os.path.join(app.instance_path, 'issueless.db')
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        USE_SESSION_FOR_NEXT=True,
         REMEMBER_COOKIE_DURATION=timedelta(days=3, hours=1),
     )
     app.config.from_pyfile('config.py', silent=True)

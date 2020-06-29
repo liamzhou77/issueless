@@ -24,7 +24,7 @@ def upgrade():
         sa.Column('name', sa.String(), nullable=False),
         sa.Column('target_id', sa.Integer(), nullable=True),
         sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('timestamp', sa.DateTime(), nullable=False),
+        sa.Column('timestamp', sa.Float(), nullable=False),
         sa.Column('payload_json', sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'],),
         sa.PrimaryKeyConstraint('id'),

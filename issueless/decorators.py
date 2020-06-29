@@ -3,7 +3,7 @@
   Typical usage example:
 
   @permission_required(Permission.MANAGE_PROJECT)
-  def update:
+  def create:
 """
 
 from functools import wraps

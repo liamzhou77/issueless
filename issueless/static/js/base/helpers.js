@@ -1,39 +1,35 @@
 function addAlert(message, style) {
   const alert = document.createElement('div');
+  alert.className = `alert alert-${style} alert-dismissible fade show text-center`;
+  alert.setAttribute('role', 'alert');
   alert.innerHTML = ` 
-    <div class="alert alert-${style} fade show" role="alert">
-      ${message}
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>`;
-  document.querySelector('nav').insertAdjacentElement('afterend', alert);
+    ${message}
+    <button
+      type="button"
+      class="close"
+      data-dismiss="alert"
+      aria-label="Close"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
+  `;
+  document
+    .querySelector('.breadcrumb-bar')
+    .insertAdjacentElement('afterend', alert);
 
-  setTimeout(function () {
-    alert.remove();
-  }, 3000);
+  setTimeout(() => {
+    $(alert).alert('close');
+  }, 5000);
 }
 
-function postFetch(url, successFunc, body) {
-  function then(resp) {
-    const contentType = resp.headers.get('content-type');
-    if (contentType && contentType.indexOf('application/json') !== -1) {
-      return resp.json().then((data) => {
-        if (data.success) {
-          successFunc();
-        } else {
-          addAlert(data.error, 'danger');
-        }
-      });
-    }
-    return resp.text().then((html) => {
-      const temp = document.createElement('html');
-      temp.innerHTML = html;
-      const error = temp.querySelector('p').textContent;
-      addAlert(error, 'danger');
-    });
+function thenFunc(resp, okFunc) {
+  if (!resp.ok && resp.status !== 422) {
+    window.location.href = `/errors/${resp.status}`;
   }
+  return resp.json().then((data) => okFunc(data));
+}
 
+function postFetch(url, okFunc, body) {
   if (body) {
     fetch(url, {
       method: 'POST',
@@ -44,10 +40,10 @@ function postFetch(url, successFunc, body) {
       redirect: 'error',
       body: JSON.stringify(body),
     })
-      .then((resp) => then(resp))
+      .then((resp) => thenFunc(resp, okFunc))
       .catch((error) => {
         if (error.message === 'Failed to fetch') {
-          window.location.reload(true);
+          window.location.href = '/auth/login';
         }
       });
   } else {
@@ -58,11 +54,21 @@ function postFetch(url, successFunc, body) {
       },
       redirect: 'error',
     })
-      .then((resp) => then(resp))
+      .then((resp) => thenFunc(resp, okFunc))
       .catch((error) => {
         if (error.message === 'Failed to fetch') {
-          window.location.reload(true);
+          window.location.href = '/auth/login';
         }
       });
   }
+}
+
+function getFetch(url, okFunc) {
+  fetch(url, { redirect: 'error' })
+    .then((resp) => thenFunc(resp, okFunc))
+    .catch((error) => {
+      if (error.message === 'Failed to fetch') {
+        window.location.href = '/auth/login';
+      }
+    });
 }
