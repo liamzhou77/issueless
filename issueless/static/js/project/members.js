@@ -33,3 +33,28 @@ document.querySelectorAll('.member-remove-btn').forEach((btn) => {
     );
   });
 });
+
+document.querySelectorAll('.member-change-role-btn').forEach((btn) => {
+  const { action, userId } = btn.dataset;
+  btn.addEventListener('click', function () {
+    postFetch(
+      action,
+      (data) => {
+        if (data.success) {
+          const roleSpan = btn.previousElementSibling.querySelector(
+            '.text-body'
+          );
+          const preRole = roleSpan.textContent;
+          if (preRole === 'Reviewer') {
+            roleSpan.textContent = 'Developer';
+          } else {
+            roleSpan.textContent = 'Reviewer';
+          }
+        } else {
+          addAlert(data.error, 'danger');
+        }
+      },
+      { user_id: userId }
+    );
+  });
+});

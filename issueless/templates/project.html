@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% import 'macros.html' as macros %} {% set project =
 current_user_project.project %} {% set role = current_user_project.role.name %}
-{% set user_count = project.user_projects.count() %} {% block header %}
+{% block header %}
 <link
   rel="stylesheet"
   href="{{ url_for('static', filename='/css/autocomplete.css') }}"
@@ -60,8 +60,8 @@ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', None)]) }}
   <p class="lead">{{ project.description }}</p>
   <div class="d-flex align-items-center">
     <ul class="avatars">
-      {% for user_project in project.user_projects.limit(15) %} {% set user =
-      user_project.user %}
+      {% for member_user_project in member_user_projects.limit(15) %} {% set
+      user = member_user_project.user %}
       <li data-user-id="{{ user.id }}">
         <span
           data-toggle="tooltip"
@@ -75,7 +75,8 @@ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', None)]) }}
           />
         </span>
       </li>
-      {% endfor %} {% if user_count >= 15 %}
+      {% endfor %} {% set user_count = member_user_projects.count() %} {% if
+      user_count >= 15 %}
       <li>
         <span
           data-toggle="tooltip"
@@ -167,8 +168,9 @@ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', None)]) }}
         </form>
       </div>
       <div id="member-list" class="content-list-body row">
-        {% for user_project in project.user_projects %} {% set user =
-        user_project.user %}
+        {% for member_user_project in member_user_projects %} {% set user =
+        member_user_project.user %} {% set member_role =
+        member_user_project.role.name %}
         <div class="col-6">
           <span class="media media-member member">
             <img
@@ -181,25 +183,29 @@ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', None)]) }}
                 {{ user.fullname() }}
               </h6>
               <span data-filter-by="text" class="text-body"
-                >{{ user_project.role.name }}</span
+                >{{ member_role }}</span
               >
             </div>
-            {% if role == 'Admin' and user_project.role.name != 'Admin' %}{% if
-            user_project.role.name == 'Reviewer' %}
+            {% if role == 'Admin' and member_role != 'Admin' %}{% if member_role
+            == 'Reviewer' %}
             <button
-              class="btn"
+              class="btn member-change-role-btn"
               data-toggle="tooltip"
               data-placement="top"
               title="Demote"
+              data-action="{{ url_for('project.change_role', id=project.id) }}"
+              data-user-id="{{ user.id }}"
             >
               <i class="material-icons">arrow_circle_down</i>
             </button>
-            {% endif %} {% if user_project.role.name == 'Developer' %}
+            {% endif %} {% if member_role == 'Developer' %}
             <button
-              class="btn"
+              class="btn member-change-role-btn"
               data-toggle="tooltip"
               data-placement="top"
               title="Promote"
+              data-action="{{ url_for('project.change_role', id=project.id) }}"
+              data-user-id="{{ user.id }}"
             >
               <i class="material-icons">arrow_circle_up</i>
             </button>

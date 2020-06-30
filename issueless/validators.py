@@ -130,9 +130,27 @@ def remove_member_validation(project, user):
             description: Validation error.
     """
 
+    return _member_validation(
+        project,
+        user,
+        'The user to be removed is not a member of the project.',
+        'You can not remove yourself from the project.',
+    )
+
+
+def change_role_validation(project, user):
+    return _member_validation(
+        project,
+        user,
+        'User is not a member of the project.',
+        'You can not assign yourself a new role.',
+    )
+
+
+def _member_validation(project, user, not_member_msg, is_current_user_msg):
     user_project = project.user_projects.filter_by(user=user).first()
     if user_project is None:
-        raise ValidationError('The user to be removed is not a member of the project.')
+        raise ValidationError(not_member_msg)
     if user == current_user:
-        raise ValidationError('You can not remove yourself from the project.')
+        raise ValidationError(is_current_user_msg)
     return user_project

@@ -92,8 +92,7 @@ block content %}
         {% set progress_bar_color = ['bg-danger', 'bg-warning', 'bg-primary',
         'bg-success', 'bg-info'] %} {% for user_project in user_projects%} {%
         set project = user_project.project %} {% set role =
-        user_project.role.name %} {% set user_count =
-        project.user_projects.count() %}
+        user_project.role.name %}
         <div class="col-lg-6">
           <div class="card card-project">
             <div class="progress">
@@ -172,8 +171,8 @@ block content %}
                 </a>
               </div>
               <ul class="avatars">
-                {% for user_project_2 in project.user_projects.limit(10) %} {%
-                set user = user_project_2.user %}
+                {% for user_project_2 in project_users[loop.index0].limit(10) %}
+                {% set user = user_project_2.user %}
                 <li>
                   <span
                     data-toggle="tooltip"
@@ -187,7 +186,8 @@ block content %}
                     />
                   </span>
                 </li>
-                {% endfor %} {% if user_count >= 10 %}
+                {% endfor %} {% set user_count = project.user_projects.count()
+                %} {% if user_count >= 10 %}
                 <li>
                   <span
                     data-toggle="tooltip"

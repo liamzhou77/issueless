@@ -31,17 +31,17 @@ VALUES
   ('test_title_3', 'test_description_3');
 
 INSERT INTO
-  user_project (user_id, project_id, role_id)
+  user_projects (user_id, project_id, role_id, timestamp)
 VALUES
   -- User 1 is admin in project 1, reviewer in project 2, developer in project 3
-  (1, 1, 1),
-  (1, 2, 2),
-  (1, 3, 3),
+  (1, 1, 1, 1593551080.585401),
+  (1, 2, 2, 1593551080.585401),
+  (1, 3, 3, 1593551080.585401),
   -- User 2 is reviewer in project 1, admin in project 2
-  (2, 1, 2),
-  (2, 2, 1),
+  (2, 1, 2, 1593551080.585401),
+  (2, 2, 1, 1593551080.585401),
   -- User 3 is admin in project 3
-  (3, 3, 1);
+  (3, 3, 1, 1593551080.585401);
 
 INSERT INTO
   notifications (
@@ -58,7 +58,7 @@ VALUES
     'invitation',
     2,
     3,
-    '1593406929.172222',
+    1593406929.172222,
     '{"invitorName": "Wade Tom", "projectTitle": "test_title_2", "roleName": "Developer"}',
     FALSE
   ),
@@ -67,7 +67,7 @@ VALUES
     'invitation',
     3,
     2,
-    '1593406942.200693',
+    1593406942.200693,
     '{"invitorName": "Ryan Cooper", "projectTitle": "test_title_3", "roleName": "Developer"}',
     FALSE
   );

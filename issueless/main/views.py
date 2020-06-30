@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 
 from issueless.errors.errors import ValidationError
 from issueless.main import bp
-from issueless.models import db, Notification
+from issueless.models import db, Notification, UserProject
 from issueless.main.helpers import get_notification
 
 
@@ -26,9 +26,15 @@ def dashboard():
             description: The dashboard html page.
     """
 
-    user_projects = current_user.user_projects
+    user_projects = current_user.user_projects.order_by(UserProject.timestamp)
     return render_template(
-        'dashboard.html', title='Dashboard', user_projects=user_projects
+        'dashboard.html',
+        title='Dashboard',
+        user_projects=user_projects,
+        project_users=[
+            user_project.project.user_projects.order_by(UserProject.timestamp)
+            for user_project in user_projects
+        ],
     )
 
 

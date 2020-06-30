@@ -3,13 +3,14 @@ from flask_login import current_user, login_required
 
 from issueless.decorators import permission_required
 from issueless.project import bp
-from issueless.models import db, Permission, Project, User
+from issueless.models import db, Permission, Project, User, UserProject
 from issueless.validators import (
+    change_role_validation,
     create_project_validation,
-    remove_member_validation,
+    edit_project_validation,
     invititation_validation,
     join_project_validation,
-    edit_project_validation,
+    remove_member_validation,
 )
 
 
@@ -19,7 +20,10 @@ from issueless.validators import (
 def project(user_project):
     project = user_project.project
     return render_template(
-        'project.html', title=project.title, current_user_project=user_project
+        'project.html',
+        title=project.title,
+        current_user_project=user_project,
+        member_user_projects=project.user_projects.order_by(UserProject.timestamp),
     )
 
 
@@ -389,6 +393,55 @@ def remove_member(user_project):
 
     db.session.delete(user_project)
     user.add_basic_notification('user removed', project.title)
+    db.session.commit()
+
+    return {'success': True}
+
+
+@bp.route('/<int:id>/change-role', methods=['POST'])
+@login_required
+@permission_required(Permission.MANAGE_PROJECT)
+def change_role(user_project):
+    """Changes a member's role.
+
+    Changes a member's role. If member's previous role is Reviewer, demote to Developer.
+    Otherwise, promote to Reviewer.
+
+    Produces:
+        application/json
+
+    Args:
+        user_project:
+            in: permission_required() decorator
+            type: UserProject
+            description: A UserProject object whose user_id belongs to the current user
+                and project_id is the same as the query parameter - id.
+        user_id:
+            in: json
+            type: int
+            description: Id of the user to be promoted or demoted.
+
+    Responses:
+        200:
+            description: Change successfully.
+        400:
+            description: Bad request.
+        404:
+            description: User not found.
+        422:
+            description: Unprocessable.
+    """
+
+    body = request.get_json()
+    user_id = body.get('user_id')
+    if user_id is None:
+        abort(400)
+
+    project = user_project.project
+    user = User.query.get_or_404(user_id)
+    user_project = change_role_validation(project, user)
+
+    user_project.change_role()
     db.session.commit()
 
     return {'success': True}

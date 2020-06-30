@@ -118,13 +118,12 @@ class User(UserMixin, db.Model):
 
 
 class UserProject(db.Model):
-    __tablename__ = 'user_project'
+    __tablename__ = 'user_projects'
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
-    role_id = db.Column(
-        db.Integer, db.ForeignKey('roles.id'), index=True, nullable=False
-    )
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    timestamp = db.Column(db.Float, index=True, default=time, nullable=False)
 
     user = db.relationship(
         'User',
@@ -145,14 +144,13 @@ class UserProject(db.Model):
     def can(self, permission):
         return self.role and self.role.has_permission(permission)
 
-    def to_dict(self):
-        return {
-            'avatar': self.user.avatar(),
-            'name': self.user.fullname(),
-            'username': self.user.username,
-            'email': self.user.email,
-            'role': self.role.name,
-        }
+    def change_role(self):
+        reviewer = Role.query.filter_by(name='Reviewer').first()
+        developer = Role.query.filter_by(name='Developer').first()
+        if self.role == reviewer:
+            self.role = developer
+        elif self.role == developer:
+            self.role = reviewer
 
 
 class Project(db.Model):

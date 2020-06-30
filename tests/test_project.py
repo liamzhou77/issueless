@@ -419,3 +419,37 @@ def test_valid_remove_member(client, auth):
     assert (
         Notification.query.filter_by(name='user removed', user_id=2).first() is not None
     )
+
+
+def test_invalid_change_role(client, auth):
+    auth.login(1)
+    assert client.post('/projects/1/change-role', json={}).status_code == 400
+    assert (
+        client.post('/projects/1/change-role', json={'user_id': 100}).status_code == 404
+    )
+
+    resp = client.post('/projects/1/change-role', json={'user_id': 3})
+    assert resp.status_code == 422
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == 'User is not a member of the project.'
+
+    resp = client.post('/projects/1/change-role', json={'user_id': 1})
+    assert resp.status_code == 422
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == 'You can not assign yourself a new role.'
+
+
+def test_valid_change_role(client, auth):
+    auth.login(1)
+
+    user_project = User.query.get(2).user_projects.filter_by(project_id=1).first()
+
+    assert user_project.role.name == 'Reviewer'
+
+    resp = client.post('/projects/1/change-role', json={'user_id': 2})
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data['success']
+    assert user_project.role.name == 'Developer'
