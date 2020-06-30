@@ -6,7 +6,7 @@ from issueless.project import bp
 from issueless.models import db, Permission, Project, User
 from issueless.validators import (
     create_project_validation,
-    delete_member_validation,
+    remove_member_validation,
     invititation_validation,
     join_project_validation,
     edit_project_validation,
@@ -19,7 +19,7 @@ from issueless.validators import (
 def project(user_project):
     project = user_project.project
     return render_template(
-        'project.html', title=project.title, user_project=user_project
+        'project.html', title=project.title, current_user_project=user_project
     )
 
 
@@ -150,39 +150,6 @@ def delete(user_project):
     db.session.commit()
 
     return redirect(url_for('index'))
-
-
-# @bp.route('/<int:id>/members')
-# @login_required
-# @permission_required(Permission.GET_MEMBERS)
-# def members(user_project):
-#     project = user_project.project
-
-#     search_term = request.args.get('search')
-#     if search_term is None:
-#         user_projects = project.user_projects.order_by(UserProject.role_id).all()
-#     else:
-#         if search_term[-1] == ' ':
-#             search_term = search_term[:-1]
-#         ilike_regex = f'{search_term}%'
-#         user_projects = (
-#             project.user_projects.join(UserProject.user)
-#             .filter(
-#                 User.username.ilike(ilike_regex)
-#                 | db.func.concat(User.first_name, ' ', User.last_name).ilike(
-#                     ilike_regex
-#                 )
-#                 | User.email.ilike(ilike_regex)
-#             )
-#             .order_by(UserProject.role_id)
-#             .order_by(db.func.concat(User.first_name, ' ', User.last_name))
-#             .all()
-#         )
-
-#     return {
-#         'success': True,
-#         'members': [user_project.to_dict() for user_project in user_projects],
-#     }
 
 
 @bp.route('/<int:id>/invite', methods=['GET', 'POST'])
@@ -373,10 +340,10 @@ def quit(user_project):
     return redirect(url_for('index'))
 
 
-@bp.route('/<int:id>/delete-member', methods=['POST'])
+@bp.route('/<int:id>/remove-member', methods=['POST'])
 @login_required
 @permission_required(Permission.MANAGE_PROJECT)
-def delete_member(user_project):
+def remove_member(user_project):
     """Removes a user from the project.
 
     Removes a user from the project. Notifies the user.
@@ -398,7 +365,7 @@ def delete_member(user_project):
 
     Responses:
         200:
-            description: Delete successfully.
+            description: Remove successfully.
         400:
             description: Bad request.
         403:
@@ -418,7 +385,7 @@ def delete_member(user_project):
 
     project = user_project.project
     user = User.query.get_or_404(user_id)
-    user_project = delete_member_validation(project, user)
+    user_project = remove_member_validation(project, user)
 
     db.session.delete(user_project)
     user.add_basic_notification('user removed', project.title)

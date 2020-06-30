@@ -115,7 +115,7 @@ def join_project_validation(project):
         raise ValidationError('The project does not have any remaining spot.')
 
 
-def delete_member_validation(project, user):
+def remove_member_validation(project, user):
     """Checks if the request to delete a member is valid.
 
     Args:
@@ -132,7 +132,7 @@ def delete_member_validation(project, user):
 
     user_project = project.user_projects.filter_by(user=user).first()
     if user_project is None:
-        raise ValidationError('The user to be deleted is not a member of the project.')
+        raise ValidationError('The user to be removed is not a member of the project.')
     if user == current_user:
         raise ValidationError('You can not remove yourself from the project.')
     return user_project

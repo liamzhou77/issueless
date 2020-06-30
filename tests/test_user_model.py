@@ -1,4 +1,4 @@
-from issueless.models import db, Project, User
+from issueless.models import db, Notification, Project, User
 
 
 def test_avatar(app):
@@ -9,7 +9,7 @@ def test_avatar(app):
     )
 
 
-def test_insert_project(app):
+def test_add_project(app):
     user = User.query.get(1)
     user.add_project(
         Project(title='test_title_4', description='test_description_4'), 'Admin'
@@ -23,3 +23,21 @@ def test_insert_project(app):
     user_project = user.user_projects.filter_by(project_id=4).first()
     role = user_project.role
     assert role.name == 'Admin'
+
+
+def test_add_notification(app):
+    user = User.query.get(2)
+
+    old_timestamp = Notification.query.get(2).timestamp
+    user.add_notification('invitation', {}, 3)
+    assert Notification.query.get(2) is None
+    notification = Notification.query.get(3)
+    assert notification is not None
+    assert notification.timestamp > old_timestamp
+
+    for i in range(2, 51):
+        user.add_notification('test', {})
+    assert user.notifications.count() == 50
+    user.add_notification('test', {})
+    assert user.notifications.count() == 50
+    assert Notification.query.get(2) is None

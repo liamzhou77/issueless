@@ -391,27 +391,27 @@ def test_quit(client, auth):
     )
 
 
-def test_invalid_delete_member(client, auth):
+def test_invalid_remove_member(client, auth):
     auth.login(1)
 
-    assert client.post('/projects/1/delete-member', json={}).status_code == 400
+    assert client.post('/projects/1/remove-member', json={}).status_code == 400
 
-    resp = client.post('/projects/1/delete-member', json={'user_id': 3})
+    resp = client.post('/projects/1/remove-member', json={'user_id': 3})
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
-    assert data['error'] == 'The user to be deleted is not a member of the project.'
+    assert data['error'] == 'The user to be removed is not a member of the project.'
 
-    resp = client.post('/projects/1/delete-member', json={'user_id': 1})
+    resp = client.post('/projects/1/remove-member', json={'user_id': 1})
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
     assert data['error'] == 'You can not remove yourself from the project.'
 
 
-def test_valid_delete_member(client, auth):
+def test_valid_remove_member(client, auth):
     auth.login(1)
-    resp = client.post('/projects/1/delete-member', json={'user_id': 2})
+    resp = client.post('/projects/1/remove-member', json={'user_id': 2})
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert data['success']

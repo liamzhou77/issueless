@@ -92,7 +92,8 @@ block content %}
         {% set progress_bar_color = ['bg-danger', 'bg-warning', 'bg-primary',
         'bg-success', 'bg-info'] %} {% for user_project in user_projects%} {%
         set project = user_project.project %} {% set role =
-        user_project.role.name %}
+        user_project.role.name %} {% set user_count =
+        project.user_projects.count() %}
         <div class="col-lg-6">
           <div class="card card-project">
             <div class="progress">
@@ -170,7 +171,40 @@ block content %}
                   </h5>
                 </a>
               </div>
-              {% include '_avatar_list.html' %}
+              <ul class="avatars">
+                {% for user_project_2 in project.user_projects.limit(10) %} {%
+                set user = user_project_2.user %}
+                <li>
+                  <span
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title="{{ user.first_name }}"
+                  >
+                    <img
+                      src="{{ user.avatar() }}"
+                      alt="{{ user.fullname() }}"
+                      class="avatar"
+                    />
+                  </span>
+                </li>
+                {% endfor %} {% if user_count >= 10 %}
+                <li>
+                  <span
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    title="{{ user_count - 10 }} more members"
+                    ><div
+                      id="member-count"
+                      class="avatar text-dark text-center border-0"
+                      style="background: #dee2e6; padding-top: 3px;"
+                    >
+                      +{{ user_count - 10 }}
+                    </div></span
+                  >
+                </li>
+                {% endif %}
+              </ul>
+
               <div class="card-meta d-flex justify-content-between">
                 <div class="d-flex align-items-center">
                   <i class="material-icons mr-1">playlist_add_check</i>

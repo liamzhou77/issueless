@@ -55,6 +55,9 @@ class User(UserMixin, db.Model):
     def add_notification(self, name, data, target_id=None):
         """Adds a new notification.
 
+        Adds a new notification. Deletes the oldest notification if adding the new one
+        would make user's notification count exceed 50.
+
         Args:
             name: A notification's name to be added.
             data: A notification data to be added.
@@ -69,6 +72,11 @@ class User(UserMixin, db.Model):
             # replacing it with the new one.
             if notification is not None:
                 db.session.delete(notification)
+
+        if self.notifications.count() >= 50:
+            db.session.delete(
+                self.notifications.order_by(Notification.timestamp).first()
+            )
 
         new_notification = Notification(
             name=name, payload_json=json.dumps(data), target_id=target_id, user=self
@@ -87,6 +95,26 @@ class User(UserMixin, db.Model):
 
     def fullname(self):
         return f'{self.first_name} {self.last_name}'
+
+    @staticmethod
+    def _insert_test_users():
+        project = Project.query.filter_by(title='Issueless').first()
+        for i in range(30):
+            user = User(
+                sub=f'auth0|{i}',
+                email=f'test{i}@gmail.com',
+                first_name=f'firstname{i}',
+                last_name=f'lastname{i}',
+                username=f'username{i}',
+            )
+
+            if i < 10:
+                user.add_project(project, 'Reviewer')
+            elif i < 20:
+                user.add_project(project, 'Developer')
+
+            db.session.add(user)
+        db.session.commit()
 
 
 class UserProject(db.Model):
