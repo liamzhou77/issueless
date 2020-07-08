@@ -23,12 +23,21 @@ class User(UserMixin, db.Model):
 
     projects = association_proxy('user_projects', 'project')
     notifications = db.relationship('Notification', backref='user', lazy='dynamic')
+    created_issues = db.relationship(
+        'Issue',
+        backref='creator',
+        lazy='dynamic',
+        primaryjoin='User.id == Issue.creator_id',
+    )
+    assigned_issues = db.relationship(
+        'Issue',
+        backref='assignee',
+        lazy='dynamic',
+        primaryjoin='User.id == Issue.assignee_id',
+    )
 
     def __repr__(self):
-        return (
-            f'< User {self.id}, {self.email}, {self.username}, {self.first_name} '
-            f'{self.last_name} >'
-        )
+        return f'< User {self.email}, {self.fullname()}, {self.username} >'
 
     def add_project(self, project, role_name):
         """Adds the input project with input role under current user.
@@ -139,7 +148,10 @@ class UserProject(db.Model):
     )
 
     def __repr__(self):
-        return f'< User {self.user_id}, Project {self.project_id}, Role {self.role} >'
+        return (
+            f'< User {self.user.fullname()}, Project {self.project.title}, Role '
+            f'{self.role.name} >'
+        )
 
     def can(self, permission):
         return self.role and self.role.has_permission(permission)
@@ -157,13 +169,16 @@ class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(40), nullable=False)
+    title = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(200), nullable=False)
 
     users = association_proxy('user_projects', 'user')
+    issues = db.relationship(
+        'Issue', backref='project', lazy='dynamic', cascade='all, delete-orphan'
+    )
 
     def __repr__(self):
-        return f'< Project {self.id}, {self.title} >'
+        return f'< Project {self.title}, {self.description} >'
 
     def get_admin(self):
         """Gets the admin user in the project."""
@@ -186,7 +201,7 @@ class Permission(object):
     READ_PROJECT = 1
     MANAGE_PROJECT = 2
     QUIT_PROJECT = 4
-    GET_MEMBERS = 8
+    MANAGE_ISSUES = 8
 
 
 class Role(db.Model):
@@ -224,12 +239,12 @@ class Role(db.Model):
             'Admin': [
                 Permission.READ_PROJECT,
                 Permission.MANAGE_PROJECT,
-                Permission.GET_MEMBERS,
+                Permission.MANAGE_ISSUES,
             ],
             'Reviewer': [
                 Permission.READ_PROJECT,
                 Permission.QUIT_PROJECT,
-                Permission.GET_MEMBERS,
+                Permission.MANAGE_ISSUES,
             ],
             'Developer': [Permission.READ_PROJECT, Permission.QUIT_PROJECT],
         }
@@ -258,15 +273,15 @@ class Notification(db.Model):
     target_id = db.Column(
         db.Integer
     )  # Representing what instance is the notification about
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     timestamp = db.Column(db.Float, index=True, default=time, nullable=False)
     payload_json = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def __repr__(self):
         return (
-            f'< Notification {self.id}, {self.name}, {self.target_id}, '
-            f'{self.payload_json}, {self.timestamp} >'
+            f'< Notification {self.user.fullname()}, {self.name}, {self.target_id}, '
+            f'{self.payload_json}, {self.is_read}>'
         )
 
     def get_data(self):
@@ -281,3 +296,23 @@ class Notification(db.Model):
             'timestamp': self.timestamp,
             "isRead": self.is_read,
         }
+
+
+class Issue(db.Model):
+    __tablename__ = 'issues'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(80), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
+    priority = db.Column(db.String(6), index=True)
+    status = db.Column(db.String(11), default='Open', index=True, nullable=False)
+    timestamp = db.Column(db.Float, index=True, default=time, nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    assignee_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+
+    def __repr__(self):
+        return (
+            f'< Issue {self.title}, {self.status}, {self.priority}, creator '
+            f'{self.creator.fullname()}, project {self.project.title} >'
+        )

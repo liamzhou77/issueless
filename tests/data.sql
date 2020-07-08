@@ -40,7 +40,8 @@ VALUES
   -- User 2 is reviewer in project 1, admin in project 2
   (2, 1, 2, 1593551080.585401),
   (2, 2, 1, 1593551080.585401),
-  -- User 3 is admin in project 3
+  -- User 3 is developer in project 1, admin in project 3
+  (3, 1, 3, 1593551080.585401),
   (3, 3, 1, 1593551080.585401);
 
 INSERT INTO
@@ -70,4 +71,46 @@ VALUES
     1593406942.200693,
     '{"invitorName": "Ryan Cooper", "projectTitle": "test_title_3", "roleName": "Developer"}',
     FALSE
+  );
+
+INSERT INTO
+  issues (
+    title,
+    description,
+    STATUS,
+    timestamp,
+    creator_id,
+    project_id
+  )
+VALUES
+  (
+    'test_title_1',
+    'test_description_1',
+    'Open',
+    1594152441.7036748,
+    1,
+    1
+  );
+
+INSERT INTO
+  issues (
+    title,
+    description,
+    priority,
+    STATUS,
+    timestamp,
+    creator_id,
+    assignee_id,
+    project_id
+  )
+VALUES
+  (
+    'test_title_2',
+    'test_description_2',
+    'High',
+    'In Progress',
+    1594158622.865205,
+    2,
+    3,
+    1
   );

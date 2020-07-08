@@ -4,7 +4,7 @@ from issueless.errors.errors import ValidationError
 from issueless.models import Role, User
 
 
-def create_project_validation(title, description):
+def create_validation(title, description):
     """Checks if a project's title and description are valid before creation.
 
     Args:
@@ -15,7 +15,7 @@ def create_project_validation(title, description):
         An error message, None if there is no error.
     """
 
-    error = _project_validation(title, description)
+    error = title_description_validation(title, description)
     if error is None and current_user.user_projects.count() >= 8:
         error = (
             'You can only have 8 or less projects. Please leave one existing '
@@ -24,7 +24,7 @@ def create_project_validation(title, description):
     return error
 
 
-def edit_project_validation(project, title, description):
+def edit_validation(project, title, description):
     """Checks if a project's title and description are valid before edit.
 
     Args:
@@ -37,27 +37,27 @@ def edit_project_validation(project, title, description):
             description: Validation error.
     """
 
-    error = _project_validation(title, description)
+    error = title_description_validation(title, description)
     if error is not None:
         raise ValidationError(error)
     elif project.title == title and project.description == description:
         raise ValidationError('No changes have been made.')
 
 
-def _project_validation(title, description):
+def title_description_validation(title, description):
     error = None
     if not title:
-        error = "Please provide your project's title."
-    elif len(title) > 40:
-        error = "Project's title can not be more than 40 character."
+        error = "Please provide the project's title."
+    elif len(title) > 80:
+        error = "Project's title can not be more than 80 character."
     elif not description:
-        error = "Please provide your project's description."
+        error = "Please provide the project's description."
     elif len(description) > 200:
         error = "Project's description can not be more than 200 characters."
     return error
 
 
-def invititation_validation(project, target, role_name):
+def invite_validation(project, target, role_name):
     """Checks if an invitation is valid.
 
     Args:
@@ -93,7 +93,7 @@ def invititation_validation(project, target, role_name):
     return user
 
 
-def join_project_validation(project):
+def join_validation(project):
     """Checks if the request to join a project is valid.
 
     Args:

@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 
 from issueless import auth
 from issueless import errors
+from issueless import issue
 from issueless import main
 from issueless import project
 from issueless.login import login
@@ -42,6 +43,7 @@ def create_app(test_config=None):
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(errors.bp)
+    app.register_blueprint(issue.bp)
     app.register_blueprint(main.bp)
     app.register_blueprint(project.bp)
     app.add_url_rule('/dashboard', endpoint='index')
@@ -49,7 +51,14 @@ def create_app(test_config=None):
     @app.shell_context_processor
     def make_shell_context():
         """Defines shell context for debugging."""
-        from issueless.models import Notification, Project, Role, User, UserProject
+        from issueless.models import (
+            Issue,
+            Notification,
+            Project,
+            Role,
+            User,
+            UserProject,
+        )
 
         return {
             'db': db,
@@ -58,6 +67,7 @@ def create_app(test_config=None):
             'UserProject': UserProject,
             'Role': Role,
             'Notification': Notification,
+            'Issue': Issue,
         }
 
     return app

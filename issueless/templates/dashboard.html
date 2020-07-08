@@ -1,13 +1,14 @@
-{% extends 'base.html' %} {% import 'macros.html' as macros %} {% block
-breadcrumb %} {{ macros.breadcrumb([('Dashboard', None)]) }} {% endblock %} {%
-block content %}
+{% extends 'base.html' %}
+{% import 'macros.html' as macros %}
+
+{% block breadcrumb %}
+{{ macros.breadcrumb([('Dashboard', None)]) }}
+{% endblock %}
+
+{% block content %}
 <div class="page-header mb-4">
   <div class="media">
-    <img
-      src="{{ current_user.avatar() }}"
-      alt="Avatar"
-      class="avatar avatar-lg mt-1"
-    />
+    <img src="{{ current_user.avatar() }}" alt="Avatar" class="avatar avatar-lg mt-1" />
     <div class="media-body ml-3">
       <h1 class="mb-0">{{ current_user.fullname() }}</h1>
       <p class="lead">{{ current_user.username }}</p>
@@ -17,56 +18,25 @@ block content %}
 
 <ul class="nav nav-tabs nav-fill" role="tablist">
   <li class="nav-item">
-    <a
-      class="nav-link active"
-      data-toggle="tab"
-      href="#projects"
-      role="tab"
-      aria-controls="projects"
-      aria-selected="true"
-      >Projects</a
-    >
+    <a class="nav-link active" data-toggle="tab" href="#projects" role="tab" aria-controls="projects"
+      aria-selected="true">Projects</a>
   </li>
   <li class="nav-item">
-    <a
-      class="nav-link"
-      data-toggle="tab"
-      href="#issues"
-      role="tab"
-      aria-controls="issues"
-      aria-selected="false"
-      >Issues</a
-    >
+    <a class="nav-link" data-toggle="tab" href="#issues" role="tab" aria-controls="issues"
+      aria-selected="false">Issues</a>
   </li>
   <li class="nav-item">
-    <a
-      class="nav-link"
-      data-toggle="tab"
-      href="#Lorem"
-      role="tab"
-      aria-controls="Lorem"
-      aria-selected="false"
-      >Lorem</a
-    >
+    <a class="nav-link" data-toggle="tab" href="#Lorem" role="tab" aria-controls="Lorem" aria-selected="false">Lorem</a>
   </li>
 </ul>
 
 <div class="tab-content">
-  <div
-    class="tab-pane fade show active"
-    id="projects"
-    role="tabpanel"
-    data-filter-list="content-list-body"
-  >
+  <div class="tab-pane fade show active" id="projects" role="tabpanel" data-filter-list="content-list-body">
     <div class="content-list">
       <div class="row content-list-head">
         <div class="col-auto">
           <h3>Projects</h3>
-          <button
-            class="btn btn-round"
-            data-toggle="modal"
-            data-target="#project-create-modal"
-          >
+          <button class="btn btn-round" data-toggle="modal" data-target="#project-create-modal">
             <i class="material-icons">add</i>
           </button>
         </div>
@@ -77,82 +47,46 @@ block content %}
                 <i class="material-icons">filter_list</i>
               </span>
             </div>
-            <input
-              type="search"
-              id="project-filter-input"
-              class="form-control filter-list-input"
-              placeholder="Filter projects"
-              aria-label="Filter Projects"
-            />
+            <input type="text" id="project-filter-input" class="form-control filter-list-input"
+              placeholder="Filter projects" aria-label="Filter Projects" />
           </div>
         </form>
       </div>
 
       <div id="project-list" class="content-list-body row">
-        {% set progress_bar_color = ['bg-danger', 'bg-warning', 'bg-primary',
-        'bg-success', 'bg-info'] %} {% for user_project in user_projects%} {%
-        set project = user_project.project %} {% set role =
-        user_project.role.name %}
+        {% set progress_bar_color = ['bg-danger', 'bg-warning', 'bg-primary', 'bg-success', 'bg-info'] %}
+        {% for user_project in user_projects%}
+        {% set project = user_project.project %}
+        {% set role = user_project.role.name %}
+        {% set user_count = project.user_projects.count() %}
         <div class="col-lg-6">
           <div class="card card-project">
             <div class="progress">
-              <!-- TODO Add progress -->
-              <div
-                class="progress-bar {{ progress_bar_color[loop.index0 % 5] }}"
-                role="progressbar"
-                style="width: 60%;"
-                aria-valuenow="60"
-                aria-valuemin="0"
-                aria-valuemax="100"
-              ></div>
+              <div class="progress-bar {{ progress_bar_color[loop.index0 % 5] }}" role="progressbar" style="width: 60%;"
+                aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
 
             <div class="card-body">
               <div class="dropdown card-options">
-                <button
-                  class="btn-options"
-                  type="button"
-                  id="project-dropdown-button-{{ loop.index }}"
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
+                <button class="btn-options" type="button" id="project-dropdown-button-{{ loop.index }}"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   <i class="material-icons">more_vert</i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
                   {% if role == 'Admin' %}
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    data-toggle="modal"
-                    data-target="#project-edit-modal"
-                    data-action="{{ url_for('project.edit', id=project.id) }}"
-                    data-project-card-id="{{ loop.index }}"
+                  <a class="dropdown-item" href="#" data-toggle="modal" data-target="#project-edit-modal"
+                    data-action="{{ url_for('project.edit', id=project.id) }}" data-project-card-id="{{ loop.index }}"
                     data-original-title="{{ project.title }}"
-                    data-original-description="{{ project.description }}"
-                    >Edit</a
-                  >
+                    data-original-description="{{ project.description }}">Edit</a>
                   <div class="dropdown-divider"></div>
-                  <form
-                    action="{{ url_for('project.delete', id=project.id) }}"
-                    method="POST"
-                  >
-                    <button
-                      type="submit"
-                      class="dropdown-item btn-link text-danger"
-                    >
+                  <form action="{{ url_for('project.delete', id=project.id) }}" method="POST">
+                    <button type="submit" class="dropdown-item btn-link text-danger">
                       Delete Project
                     </button>
                   </form>
                   {% else %}
-                  <form
-                    action="{{ url_for('project.quit', id=project.id) }}"
-                    method="POST"
-                  >
-                    <button
-                      type="submit"
-                      class="dropdown-item btn-link text-danger"
-                    >
+                  <form action="{{ url_for('project.quit', id=project.id) }}" method="POST">
+                    <button type="submit" class="dropdown-item btn-link text-danger">
                       Leave Project
                     </button>
                   </form>
@@ -161,11 +95,7 @@ block content %}
               </div>
               <div class="card-title">
                 <a href="{{ url_for('project.project', id=project.id) }}">
-                  <h5
-                    id="project-title-{{ loop.index }}"
-                    class="text-truncate"
-                    data-filter-by="text"
-                  >
+                  <h5 id="project-title-{{ loop.index }}" class="text-truncate" data-filter-by="text">
                     {{ project.title }}
                   </h5>
                 </a>
@@ -174,33 +104,17 @@ block content %}
                 {% for user_project_2 in project_users[loop.index0].limit(10) %}
                 {% set user = user_project_2.user %}
                 <li>
-                  <span
-                    data-toggle="tooltip"
-                    data-placement="top"
-                    title="{{ user.first_name }}"
-                  >
-                    <img
-                      src="{{ user.avatar() }}"
-                      alt="{{ user.fullname() }}"
-                      class="avatar"
-                    />
-                  </span>
+                  <img src="{{ user.avatar() }}" alt="{{ user.fullname() }}" class="avatar" data-toggle="tooltip"
+                    data-placement="top" title="{{ user.first_name }}" />
                 </li>
-                {% endfor %} {% set user_count = project.user_projects.count()
-                %} {% if user_count >= 10 %}
+                {% endfor %}
+                {% if user_count >= 10 %}
                 <li>
-                  <span
-                    data-toggle="tooltip"
-                    data-placement="top"
-                    title="{{ user_count - 10 }} more members"
-                    ><div
-                      id="member-count"
-                      class="avatar text-dark text-center border-0"
-                      style="background: #dee2e6; padding-top: 3px;"
-                    >
-                      +{{ user_count - 10 }}
-                    </div></span
-                  >
+                  <div id="member-count" class="avatar text-dark text-center border-0"
+                    style="background: #dee2e6; padding-top: 3px;" data-toggle="tooltip" data-placement="top"
+                    title="{{ user_count - 10 }} more members">
+                    +{{ user_count - 10 }}
+                  </div>
                 </li>
                 {% endif %}
               </ul>
@@ -221,24 +135,13 @@ block content %}
   </div>
 </div>
 
-<form
-  class="modal fade"
-  id="project-create-modal"
-  tabindex="-1"
-  aria-hidden="true"
-  action="{{ url_for('project.create') }}"
-  method="POST"
->
+<form class="modal fade" id="project-create-modal" tabindex="-1" aria-hidden="true"
+  action="{{ url_for('project.create') }}" method="POST">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">New Project</h5>
-        <button
-          type="button"
-          class="close btn btn-round"
-          data-dismiss="modal"
-          aria-label="Close"
-        >
+        <button type="button" class="close btn btn-round" data-dismiss="modal" aria-label="Close">
           <i class="material-icons">close</i>
         </button>
       </div>
@@ -253,43 +156,20 @@ block content %}
         <div class="form-group row align-items-center">
           <label class="col-3">Title</label>
           {% if user_projects.count() >= 8 %}
-          <input
-            class="form-control col"
-            type="text"
-            placeholder="Project title"
-            name="title"
-            maxlength="40"
-            disabled
-          />
+          <input class="form-control col" type="text" placeholder="Project title" name="title" maxlength="80"
+            disabled />
           {% else %}
-          <input
-            class="form-control col"
-            type="text"
-            placeholder="Project title"
-            name="title"
-            maxlength="40"
-          />
+          <input class="form-control col" type="text" placeholder="Project title" name="title" maxlength="80" />
           {% endif %}
         </div>
         <div class="form-group row">
           <label class="col-3">Description</label>
           {% if user_projects.count() >= 8 %}
-          <textarea
-            class="form-control col"
-            maxlength="200"
-            rows="3"
-            placeholder="Project description"
-            name="description"
-            disabled
-          ></textarea>
+          <textarea class="form-control col" maxlength="200" rows="3" placeholder="Project description"
+            name="description" disabled></textarea>
           {% else %}
-          <textarea
-            class="form-control col"
-            maxlength="200"
-            rows="3"
-            placeholder="Project description"
-            name="description"
-          ></textarea>
+          <textarea class="form-control col" maxlength="200" rows="3" placeholder="Project description"
+            name="description"></textarea>
           {% endif %}
         </div>
       </div>
@@ -302,22 +182,12 @@ block content %}
   </div>
 </form>
 
-<form
-  class="modal fade"
-  id="project-edit-modal"
-  tabindex="-1"
-  aria-hidden="true"
->
+<form class="modal fade" id="project-edit-modal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Edit Project</h5>
-        <button
-          type="button"
-          class="close btn btn-round"
-          data-dismiss="modal"
-          aria-label="Close"
-        >
+        <button type="button" class="close btn btn-round" data-dismiss="modal" aria-label="Close">
           <i class="material-icons">close</i>
         </button>
       </div>
@@ -325,21 +195,11 @@ block content %}
         <h6>Project Details</h6>
         <div class="form-group row align-items-center">
           <label class="col-3">Title</label>
-          <input
-            class="form-control col"
-            type="text"
-            placeholder="Project title"
-            maxlength="40"
-          />
+          <input class="form-control col" type="text" placeholder="Project title" maxlength="80" />
         </div>
         <div class="form-group row">
           <label class="col-3">Description</label>
-          <textarea
-            class="form-control col"
-            maxlength="200"
-            rows="3"
-            placeholder="Project description"
-          ></textarea>
+          <textarea class="form-control col" maxlength="200" rows="3" placeholder="Project description"></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -351,8 +211,9 @@ block content %}
   </div>
 </form>
 
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script src="{{ url_for('static', filename='/js/dashboard/dashboard.js') }}"></script>
-<script src="{{ url_for('static', filename='/js/dashboard/create_project.js') }}"></script>
 <script src="{{ url_for('static', filename='/js/dashboard/edit_project.js') }}"></script>
 {% endblock %}

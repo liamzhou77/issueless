@@ -44,12 +44,23 @@ document.querySelectorAll('.member-change-role-btn').forEach((btn) => {
           const roleSpan = btn.previousElementSibling.querySelector(
             '.text-body'
           );
+          const icon = btn.firstElementChild;
+
           const preRole = roleSpan.textContent;
+          let newTooltipText;
           if (preRole === 'Reviewer') {
             roleSpan.textContent = 'Developer';
+            newTooltipText = 'Promote';
+            icon.textContent = 'arrow_circle_up';
           } else {
             roleSpan.textContent = 'Reviewer';
+            newTooltipText = 'Demote';
+            icon.textContent = 'arrow_circle_down';
           }
+          btn.setAttribute('title', newTooltipText);
+          btn.setAttribute('data-original-title', newTooltipText);
+          $(btn).tooltip('update');
+          $(btn).tooltip('hide');
         } else {
           addAlert(data.error, 'danger');
         }

@@ -2,14 +2,14 @@ from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from issueless.decorators import permission_required
+from issueless.models import db, Issue, Permission, Project, User, UserProject
 from issueless.project import bp
-from issueless.models import db, Permission, Project, User, UserProject
-from issueless.validators import (
+from issueless.project.helpers import (
     change_role_validation,
-    create_project_validation,
-    edit_project_validation,
-    invititation_validation,
-    join_project_validation,
+    create_validation,
+    edit_validation,
+    invite_validation,
+    join_validation,
     remove_member_validation,
 )
 
@@ -24,6 +24,7 @@ def project(user_project):
         title=project.title,
         current_user_project=user_project,
         member_user_projects=project.user_projects.order_by(UserProject.timestamp),
+        open_issues=project.issues.filter_by(status='Open').order_by(Issue.timestamp),
     )
 
 
@@ -50,7 +51,7 @@ def create():
     title = request.form.get('title')
     description = request.form.get('description')
 
-    error = create_project_validation(title, description)
+    error = create_validation(title, description)
     if error is not None:
         flash(error)
     else:
@@ -107,7 +108,7 @@ def edit(user_project):
         abort(400)
 
     project = user_project.project
-    edit_project_validation(project, title, description)
+    edit_validation(project, title, description)
 
     project.title = title
     project.description = description
@@ -220,7 +221,7 @@ def invite(user_project):
         if None in (target, role_name):
             abort(400)
 
-        user = invititation_validation(project, target, role_name)
+        user = invite_validation(project, target, role_name)
         if user is not None:
             data = {
                 'avatar': current_user.avatar(),
@@ -297,7 +298,7 @@ def join(id):
         abort(403)
 
     project = Project.query.get(id)
-    join_project_validation(project)
+    join_validation(project)
 
     role_name = notification.get_data()['roleName']
     current_user.add_project(project, role_name)

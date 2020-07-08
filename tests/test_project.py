@@ -15,24 +15,24 @@ def test_invalid_create(client, auth):
     resp = client.post(
         '/projects/create', data={'title': '', 'description': ''}, follow_redirects=True
     )
-    assert b'Please provide your project&#39;s title.' in resp.data
+    assert b'Please provide the project&#39;s title.' in resp.data
 
     resp = client.post(
         '/projects/create',
         data={'title': 'test_title', 'description': ''},
         follow_redirects=True,
     )
-    assert b'Please provide your project&#39;s description.' in resp.data
+    assert b'Please provide the project&#39;s description.' in resp.data
 
     resp = client.post(
         '/projects/create',
         data={
-            'title': 'This is a title with more than 40 characters...........',
+            'title': 'This is a title with more than 80 characters............................................',
             'description': 'awds',
         },
         follow_redirects=True,
     )
-    assert b'Project&#39;s title can not be more than 40 character.' in resp.data
+    assert b'Project&#39;s title can not be more than 80 character.' in resp.data
 
     resp = client.post(
         '/projects/create',
@@ -94,7 +94,7 @@ def test_invalid_edit(client, auth):
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
-    assert data['error'] == "Please provide your project's title."
+    assert data['error'] == "Please provide the project's title."
 
     resp = client.post(
         '/projects/1/edit', json={'title': 'test_title', 'description': ''}
@@ -102,19 +102,19 @@ def test_invalid_edit(client, auth):
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
-    assert data['error'] == "Please provide your project's description."
+    assert data['error'] == "Please provide the project's description."
 
     resp = client.post(
         '/projects/1/edit',
         json={
-            'title': 'This is a title with more than 40 characters...........',
+            'title': 'This is a title with more than 80 characters............................................',
             'description': 'awds',
         },
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
-    assert data['error'] == "Project's title can not be more than 40 character."
+    assert data['error'] == "Project's title can not be more than 80 character."
 
     resp = client.post(
         '/projects/1/edit',
@@ -200,7 +200,7 @@ def test_invite_get(client, auth):
             'username': 'test_username_3',
             'avatar': 'https://www.gravatar.com/avatar/19f84906f4412abf6066aaa92fe9d6c1'
             '?d=identicon&s=68',
-            'joined': False,
+            'joined': True,
         },
         {
             'fullname': 'Wade Tom',
@@ -239,12 +239,12 @@ def test_invite_get(client, auth):
 
 
 def test_invalid_invite_post(client, auth):
-    auth.login(1)
+    auth.login(2)
 
-    assert client.post('/projects/1/invite', json={}).status_code == 400
+    assert client.post('/projects/2/invite', json={}).status_code == 400
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Unknown'}
+        '/projects/2/invite', json={'target': 'test_username_3', 'role': 'Unknown'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -252,7 +252,7 @@ def test_invalid_invite_post(client, auth):
     assert data['error'] == 'Please provide a valid role.'
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Admin'}
+        '/projects/2/invite', json={'target': 'test_username_3', 'role': 'Admin'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -260,7 +260,7 @@ def test_invalid_invite_post(client, auth):
     assert data['error'] == 'Please provide a valid role.'
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test_username_1', 'role': 'Reviewer'}
+        '/projects/2/invite', json={'target': 'test_username_2', 'role': 'Reviewer'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -268,14 +268,14 @@ def test_invalid_invite_post(client, auth):
     assert data['error'] == 'You can not invite yourself to your project.'
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test_username_2', 'role': 'Reviewer'}
+        '/projects/2/invite', json={'target': 'test_username_1', 'role': 'Reviewer'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
     assert data['error'] == 'User is already a member of the project.'
 
-    project = Project.query.get(1)
+    project = Project.query.get(2)
     for num in range(4, 32):
         user = User(
             sub=f'test_sub_{num}',
@@ -290,7 +290,7 @@ def test_invalid_invite_post(client, auth):
     assert project.user_projects.count() == 30
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Developer'}
+        '/projects/2/invite', json={'target': 'test_username_3', 'role': 'Developer'}
     )
     assert resp.status_code == 422
     data = json.loads(resp.data)
@@ -299,10 +299,10 @@ def test_invalid_invite_post(client, auth):
 
 
 def test_valid_invite_post(client, auth):
-    auth.login(1)
+    auth.login(2)
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Developer'}
+        '/projects/2/invite', json={'target': 'test_username_3', 'role': 'Developer'}
     )
     assert resp.status_code == 200
     data = json.loads(resp.data)
@@ -310,21 +310,21 @@ def test_valid_invite_post(client, auth):
 
     notification = Notification.query.get(3)
     assert notification.name == 'invitation'
-    assert notification.target_id == 1
+    assert notification.target_id == 2
     assert notification.user_id == 3
     data = notification.get_data()
     assert (
         data['avatar']
-        == 'https://www.gravatar.com/avatar/245cf079454dc9a3374a7c076de247cc?d='
+        == 'https://www.gravatar.com/avatar/3c4f419e8cd958690d0d14b3b89380d3?d='
         'identicon&s=68'
     )
-    assert data['fullname'] == 'David Johnson'
-    assert data['projectTitle'] == 'test_title_1'
+    assert data['fullname'] == 'Wade Tom'
+    assert data['projectTitle'] == 'test_title_2'
     assert data['roleName'] == 'Developer'
     timestamp = notification.timestamp
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test_username_3', 'role': 'Developer'}
+        '/projects/2/invite', json={'target': 'test_username_3', 'role': 'Developer'}
     )
     assert resp.status_code == 200
     data = json.loads(resp.data)
@@ -335,14 +335,14 @@ def test_valid_invite_post(client, auth):
     timestamp = notification.timestamp
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test10@gmail.com', 'role': 'Developer'},
+        '/projects/2/invite', json={'target': 'test10@gmail.com', 'role': 'Developer'},
     )
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert data['success']
 
     resp = client.post(
-        '/projects/1/invite', json={'target': 'test3@gmail.com', 'role': 'Developer'},
+        '/projects/2/invite', json={'target': 'test3@gmail.com', 'role': 'Developer'},
     )
     assert resp.status_code == 200
     data = json.loads(resp.data)
@@ -392,17 +392,17 @@ def test_quit(client, auth):
 
 
 def test_invalid_remove_member(client, auth):
-    auth.login(1)
+    auth.login(2)
 
-    assert client.post('/projects/1/remove-member', json={}).status_code == 400
+    assert client.post('/projects/2/remove-member', json={}).status_code == 400
 
-    resp = client.post('/projects/1/remove-member', json={'user_id': 3})
+    resp = client.post('/projects/2/remove-member', json={'user_id': 3})
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
     assert data['error'] == 'The user to be removed is not a member of the project.'
 
-    resp = client.post('/projects/1/remove-member', json={'user_id': 1})
+    resp = client.post('/projects/2/remove-member', json={'user_id': 2})
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
@@ -422,19 +422,19 @@ def test_valid_remove_member(client, auth):
 
 
 def test_invalid_change_role(client, auth):
-    auth.login(1)
-    assert client.post('/projects/1/change-role', json={}).status_code == 400
+    auth.login(2)
+    assert client.post('/projects/2/change-role', json={}).status_code == 400
     assert (
-        client.post('/projects/1/change-role', json={'user_id': 100}).status_code == 404
+        client.post('/projects/2/change-role', json={'user_id': 100}).status_code == 404
     )
 
-    resp = client.post('/projects/1/change-role', json={'user_id': 3})
+    resp = client.post('/projects/2/change-role', json={'user_id': 3})
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']
     assert data['error'] == 'User is not a member of the project.'
 
-    resp = client.post('/projects/1/change-role', json={'user_id': 1})
+    resp = client.post('/projects/2/change-role', json={'user_id': 2})
     assert resp.status_code == 422
     data = json.loads(resp.data)
     assert not data['success']

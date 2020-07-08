@@ -1,9 +1,9 @@
 """Defines all decorators.
 
-  Typical usage example:
+Typical usage example:
 
-  @permission_required(Permission.MANAGE_PROJECT)
-  def create:
+@permission_required(Permission.MANAGE_PROJECT)
+def create:
 """
 
 from functools import wraps
@@ -11,7 +11,15 @@ from functools import wraps
 from flask import abort
 from flask_login import current_user
 
-from issueless.models import Project
+from issueless.models import Issue, Permission, Project
+
+
+def _get_user_project(id):
+    project = Project.query.get_or_404(id)
+    user_project = current_user.user_projects.filter_by(project=project).first()
+    if user_project is None:
+        abort(403)
+    return user_project
 
 
 def permission_required(permission):
@@ -32,10 +40,8 @@ def permission_required(permission):
                 id: A project's id to be checked for.
             """
 
-            project = Project.query.get_or_404(id)
-
-            user_project = current_user.user_projects.filter_by(project=project).first()
-            if user_project is None or not user_project.can(permission):
+            user_project = _get_user_project(id)
+            if not user_project.can(permission):
                 abort(403)
 
             return f(user_project, *args, **kwargs)
@@ -43,3 +49,38 @@ def permission_required(permission):
         return wrapper
 
     return decorator
+
+
+def manage_issue_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project = _get_user_project(id)
+        issue = Issue.query.get_or_404(issue_id)
+
+        if user_project.project != issue.project:
+            abort(400)
+
+        if (
+            not user_project.can(Permission.MANAGE_ISSUES)
+            and issue.creator != current_user
+        ):
+            abort(403)
+
+        return f(issue, *args, **kwargs)
+
+    return wrapper
+
+
+def assign_issue_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project = _get_user_project(id)
+        issue = Issue.query.get_or_404(issue_id)
+        if user_project.project != issue.project:
+            abort(400)
+        if not user_project.can(Permission.MANAGE_ISSUES):
+            abort(403)
+
+        return f(user_project.project, issue, *args, **kwargs)
+
+    return wrapper

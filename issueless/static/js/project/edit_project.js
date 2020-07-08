@@ -1,5 +1,3 @@
-const editProjectForm = document.getElementById('project-edit-modal');
-
 function disableEditBtn() {
   const titleInput = this[1];
   const descriptionInput = this[2];
@@ -48,5 +46,9 @@ function submit(e) {
   );
 }
 
-editProjectForm.addEventListener('input', disableEditBtn);
-editProjectForm.addEventListener('submit', submit);
+document
+  .getElementById('project-edit-modal')
+  .addEventListener('input', disableEditBtn);
+document
+  .getElementById('project-edit-modal')
+  .addEventListener('submit', submit);
