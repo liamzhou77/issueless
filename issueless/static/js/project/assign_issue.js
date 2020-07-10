@@ -12,28 +12,8 @@ $('#issue-assign-modal').on('show.bs.modal', function (e) {
   }
   submitBtn.disabled = true;
 
-  this.addEventListener('submit', function (event) {
-    event.preventDefault();
-
-    const priority = selectElement.options[selectElement.selectedIndex].value;
-    const assigneeId = this.querySelector('.custom-control-input:checked')
-      .value;
-
-    const caller = e.relatedTarget;
-    const { action, parentId } = caller.dataset;
-    postFetch(
-      action,
-      (data) => {
-        $(this).modal('hide');
-        if (data.success) {
-          document.getElementById(parentId).remove();
-        } else {
-          addAlert(data.error, 'danger');
-        }
-      },
-      { priority, assignee_id: assigneeId }
-    );
-  });
+  const caller = e.relatedTarget;
+  this.action = caller.dataset.action;
 });
 
 document

@@ -1,10 +1,15 @@
-$('#issue-open-list-collapse').on('show.bs.collapse', function () {
-  document.querySelector(`[href="#${this.id}"]`).firstElementChild.textContent =
-    'remove';
-});
-$('#issue-open-list-collapse').on('hide.bs.collapse', function () {
-  document.querySelector(`[href="#${this.id}"]`).firstElementChild.textContent =
-    'add';
+document.querySelectorAll('.issue-list-collapse').forEach((collapse) => {
+  $(collapse).on('show.bs.collapse', function () {
+    document.querySelector(
+      `[href="#${this.id}"]`
+    ).firstElementChild.textContent = 'remove';
+  });
+
+  $(collapse).on('hide.bs.collapse', function () {
+    document.querySelector(
+      `[href="#${this.id}"]`
+    ).firstElementChild.textContent = 'add';
+  });
 });
 
 document.querySelectorAll('.issue-description-collapse').forEach((elem) => {

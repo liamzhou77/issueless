@@ -4,6 +4,7 @@
 {% set project = current_user_project.project %}
 {% set role = current_user_project.role.name %}
 {% set user_count = member_user_projects.count() %}
+{% set open_issues_count = open_issues.count() %}
 
 {% block header %}
 {% if role == 'Admin' %}
@@ -132,12 +133,12 @@
             <i class="material-icons" style="font-size: 1.75rem;">remove</i>
           </a>
         </div>
-        <div class="card-open-list-body collapse show" id="issue-open-list-collapse">
+        <div class="card-open-list-body collapse show issue-list-collapse" id="issue-open-list-collapse">
           {% for issue in open_issues %}
           <div id="card-{{ loop.index }}" class="card card-issue">
             <div class="card-body">
               <div class="card-title text-truncate">
-                <h6 id="issue-title-{{ loop.index }}" class="text-truncate" data-filter-by="text">
+                <h6 class="text-truncate" data-filter-by="text">
                   {{ issue.title }}
                 </h6>
                 <span class="text-small">
@@ -167,15 +168,14 @@
                   <div class="dropdown-menu dropdown-menu-right">
                     {% if role == 'Admin' or role == 'Reviewer' %}
                     <a class="dropdown-item" href="#" data-toggle="modal" data-target="#issue-assign-modal"
-                      data-action="{{ url_for('issue.assign', id=project.id, issue_id=issue.id) }}"
-                      data-parent-id="card-{{ loop.index }}">
+                      data-action="{{ url_for('issue.assign', id=project.id, issue_id=issue.id) }}">
                       Assign
                     </a>
                     {% endif %}
-                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#issue-edit-modal"
+                    <a class="dropdown-item issue-open-edit-link" href="#" data-toggle="modal"
+                      data-target="#issue-edit-modal"
                       data-action="{{ url_for('issue.edit', id=project.id, issue_id=issue.id) }}"
-                      data-issue-card-id="{{ loop.index }}" data-original-title="{{ issue.title }}"
-                      data-original-description="{{ issue.description }}">
+                      data-original-title="{{ issue.title }}" data-original-description="{{ issue.description }}">
                       Edit
                     </a>
                     <div class="dropdown-divider"></div>
@@ -190,8 +190,89 @@
               </div>
             </div>
             <div class="collapse issue-description-collapse" id="issue-open-description-collapse-{{ loop.index }}">
-              <div id="issue-description-{{ loop.index }}" class="card card-body">
+              <div class="card card-body">
                 {{ issue.description }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card-list" data-filter-list="card-in-progress-list-body">
+        <div class="card-list-head pb-2">
+          <h5 class="my-auto">In Progress</h5>
+          <form class="ml-auto mr-3">
+            <div class="input-group input-group-round">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="material-icons">filter_list</i>
+                </span>
+              </div>
+              <input type="text" class="form-control filter-list-input" placeholder="Filter issues"
+                aria-label="Filter Issues" />
+            </div>
+          </form>
+          <a class="my-auto mr-3" href="#issue-in-progress-list-collapse" data-toggle="collapse">
+            <i class="material-icons" style="font-size: 1.75rem;">remove</i>
+          </a>
+        </div>
+        <div class="card-in-progress-list-body collapse show issue-list-collapse" id="issue-in-progress-list-collapse">
+          {% for issue in in_progress_issues %}
+          {% set priority = issue.priority %}
+          {% set assignee = issue.assignee %}
+          {% set index = loop.index + open_issues_count %}
+          <div id="card-{{ index }}" class="card card-issue">
+            <div class="card-body">
+              <div class="card-title text-truncate">
+                <a href="#">
+                  <h6 class="text-truncate" data-filter-by="text">
+                    {{ issue.title }}
+                  </h6>
+                </a>
+                <span class="text-small">
+                  Priority:
+                  <strong data-filter-by="text">
+                    {{ priority }}
+                    {% if priority == 'High' %}
+                    &#x1F525;
+                    {% endif %}
+                  </strong>
+                </span>
+              </div>
+              <div class="card-meta">
+                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}">
+                  {% if role == 'Admin' or role == 'Reviewer' %}
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar"
+                    style="margin-right: 17px;">
+                  {% else %}
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar"
+                    style="margin-right: 70px;">
+                  {% endif %}
+                </span>
+                {% if role == 'Admin' or role == 'Reviewer' %}
+                <div class="dropdown card-options">
+                  <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="material-icons">more_vert</i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item issue-in-progress-edit-link" href="#" data-toggle="modal"
+                      data-target="#issue-edit-modal"
+                      data-action="{{ url_for('issue.edit', id=project.id, issue_id=issue.id) }}"
+                      data-original-title="{{ issue.title }}" data-original-description="{{ issue.description }}"
+                      data-original-priority="{{ issue.priority }}" data-original-assignee-id="{{ issue.assignee_id }}">
+                      Edit
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form class="issue-delete-form"
+                      action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}"
+                      data-parent-id="card-{{ index }}">
+                      <button type="submit" class="dropdown-item btn-link text-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -275,9 +356,7 @@
       </div>
       <!--end of modal head-->
       <div class="modal-body">
-        <p class="text-dark">
-          Send an invitation to add a new member to this project
-        </p>
+        <h6>Send an invitation to add a new member to this project</h6>
         <div class="input-group">
           <div class="input-group-prepend">
             <span class="input-group-text">
@@ -291,7 +370,7 @@
         </div>
         <div class="autocomplete-selected border p-2" hidden></div>
         <hr />
-        <span class="text-dark">Select a role</span>
+        <h6>Select a role</h6>
         <div class="form-check pt-2">
           <input type="radio" id="role-reviewer" class="form-check-input" value="Reviewer" name="role" checked />
           <div class="ml-2">
@@ -383,7 +462,7 @@
   </div>
 </form>
 
-<form class="modal fade" id="issue-assign-modal" tabindex="-1" aria-hidden="true">
+<form class="modal fade" id="issue-assign-modal" tabindex="-1" aria-hidden="true" method="POST">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -393,10 +472,10 @@
         </button>
       </div>
       <div class="modal-body">
-        <p class="text-dark">
+        <h6>
           Select the priority level of this issue
-        </p>
-        <select class="custom-select">
+        </h6>
+        <select class="custom-select" name="priority">
           <option selected>Choose a priority level</option>
           <option value="High">High &#x1F525;</option>
           <option value="Medium">Medium</option>
@@ -404,7 +483,7 @@
         </select>
         <hr>
 
-        <span class="text-dark">Assign a member to work on this issue</span>
+        <h6>Assign a member to work on this issue</h6>
         <div class="users-manage pt-3" data-filter-list="form-group-users">
           <div class="input-group input-group-round">
             <div class="input-group-prepend">
@@ -419,8 +498,8 @@
             {% for member_user_project in member_user_projects %}
             {% set user = member_user_project.user %}
             <div class="custom-control custom-radio">
-              <input type="radio" class="custom-control-input" id="user-assign-{{ loop.index }}"
-                name="user-assign-radio" value="{{ user.id }}">
+              <input type="radio" class="custom-control-input" id="user-assign-{{ loop.index }}" name="assignee_id"
+                value="{{ user.id }}">
               <label class="custom-control-label" for="user-assign-{{ loop.index }}">
                 <span class="d-flex align-items-center">
                   <img src="{{ user.avatar() }}" alt="{{ user.fullname() }}" class="avatar mr-2">
@@ -460,6 +539,45 @@
         <div class="form-group row">
           <label class="col-3">Description</label>
           <textarea class="form-control col" maxlength="200" rows="3" placeholder="Issue description"></textarea>
+        </div>
+        <div id="issue-edit-second-section">
+          <hr>
+          <h6>Select the priority level of this issue</h6>
+          <select class="custom-select">
+            <option selected>Choose a priority level</option>
+            <option value="High">High &#x1F525;</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <hr>
+
+          <h6 class="text-dark">Assign a member to work on this issue</h6>
+          <div class="users-manage pt-3" data-filter-list="form-group-users">
+            <div class="input-group input-group-round">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="material-icons">filter_list</i>
+                </span>
+              </div>
+              <input type="text" class="form-control filter-list-input" placeholder="Filter members"
+                aria-label="Filter Members" />
+            </div>
+            <div class="form-group-users">
+              {% for member_user_project in member_user_projects %}
+              {% set user = member_user_project.user %}
+              <div class="custom-control custom-radio">
+                <input type="radio" class="custom-control-input" id="edit-user-assign-{{ loop.index }}"
+                  name="user-assign-radio" value="{{ user.id }}">
+                <label class="custom-control-label" for="edit-user-assign-{{ loop.index }}">
+                  <span class="d-flex align-items-center">
+                    <img src="{{ user.avatar() }}" alt="{{ user.fullname() }}" class="avatar mr-2">
+                    <span class="h6 mb-0" data-filter-by="text">{{ user.fullname() }}</span>
+                  </span>
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">

@@ -25,6 +25,20 @@ def project(user_project):
         current_user_project=user_project,
         member_user_projects=project.user_projects.order_by(UserProject.timestamp),
         open_issues=project.issues.filter_by(status='Open').order_by(Issue.timestamp),
+        in_progress_issues=project.issues.filter_by(
+            status='In Progress', priority='High'
+        )
+        .order_by(Issue.timestamp)
+        .union_all(
+            project.issues.filter_by(status='In Progress', priority='Medium').order_by(
+                Issue.timestamp
+            )
+        )
+        .union_all(
+            project.issues.filter_by(status='In Progress', priority='Low').order_by(
+                Issue.timestamp
+            )
+        ),
     )
 
 
@@ -68,10 +82,6 @@ def create():
 def edit(user_project):
     """Edits a project's information.
 
-    Produces:
-        application/json
-        text/html
-
     Args:
         user_project:
             in: permission_required() decorator
@@ -79,11 +89,11 @@ def edit(user_project):
             description: A UserProject object whose user_id belongs to the current user
             and project_id is the same as the query parameter - id.
         title:
-            in: json
+            in: formData
             type: string
             description: The project's new title.
         description:
-            in: json
+            in: formData
             type: string
             description: The project's new description.
 

@@ -75,8 +75,7 @@
                 <div class="dropdown-menu dropdown-menu-right">
                   {% if role == 'Admin' %}
                   <a class="dropdown-item" href="#" data-toggle="modal" data-target="#project-edit-modal"
-                    data-action="{{ url_for('project.edit', id=project.id) }}" data-project-card-id="{{ loop.index }}"
-                    data-original-title="{{ project.title }}"
+                    data-action="{{ url_for('project.edit', id=project.id) }}" data-original-title="{{ project.title }}"
                     data-original-description="{{ project.description }}">Edit</a>
                   <div class="dropdown-divider"></div>
                   <form action="{{ url_for('project.delete', id=project.id) }}" method="POST">

@@ -4,12 +4,7 @@ $('#project-edit-modal').on('show.bs.modal', function (e) {
   const submitBtn = this[3];
 
   const caller = e.relatedTarget;
-  const {
-    action,
-    projectCardId,
-    originalTitle,
-    originalDescription,
-  } = caller.dataset;
+  const { action, originalTitle, originalDescription } = caller.dataset;
 
   titleInput.value = originalTitle;
   descriptionInput.value = originalDescription;
@@ -37,14 +32,10 @@ $('#project-edit-modal').on('show.bs.modal', function (e) {
     postFetch(
       action,
       (data) => {
-        $(this).modal('hide');
         if (data.success) {
-          document.getElementById(
-            `project-title-${projectCardId}`
-          ).textContent = title;
-          caller.setAttribute('data-original-title', title);
-          caller.setAttribute('data-original-description', description);
+          window.location.reload(true);
         } else {
+          $(this).modal('hide');
           addAlert(data.error, 'danger');
         }
       },

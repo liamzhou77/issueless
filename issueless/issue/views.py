@@ -56,14 +56,21 @@ def create(user_project):
 @bp.route('/<int:issue_id>/edit', methods=['POST'])
 @login_required
 @manage_issue_permission_required
-def edit(issue):
+def edit(project, issue):
     """Edits an issue.
+
+    Edits an issue's title and description. If the project's status is In Progress,
+    edits the priority and assignee too.
 
     Produces:
         application/json
         text/html
 
     Args:
+        project:
+            in: manage_issue_permission_required() decorator
+            type: Project
+            description: A Project object whose id is the same as the id in the path.
         issue:
             in: manage_issue_permission_required() decorator
             type: Issue
@@ -76,6 +83,14 @@ def edit(issue):
             in: json
             type: string
             description: The issue's new description.
+        priority:
+            in: json
+            type: String
+            description: The priority level of the issue.
+        assignee_id:
+            in: json
+            type: String
+            description: The assignee's id.
 
 
     Responses:
@@ -84,10 +99,11 @@ def edit(issue):
         400:
             Bad request.
         403:
-            description: Current user does not have the permission and is not the
-                creator of the issue.
+            description: Forbidden.
         404:
             description: Project or issue does not exist.
+        422:
+            description: Unprocessable.
     """
 
     body = request.get_json()
@@ -96,7 +112,17 @@ def edit(issue):
     if None in (title, description):
         abort(400)
 
-    edit_validation(issue, title, description)
+    if issue.status == 'In Progress':
+        priority = body.get('priority')
+        assignee_id = body.get('assignee_id')
+        if None in (priority, assignee_id):
+            abort(400)
+
+        edit_validation(issue, title, description, project, priority, assignee_id)
+        issue.priority = priority
+        issue.assignee_id = assignee_id
+    else:
+        edit_validation(issue, title, description)
 
     issue.title = title
     issue.description = description
@@ -108,7 +134,7 @@ def edit(issue):
 @bp.route('/<int:issue_id>/delete', methods=['POST'])
 @login_required
 @manage_issue_permission_required
-def delete(issue):
+def delete(project, issue):
     """Deletes an issue.
 
     Produces:
@@ -116,6 +142,10 @@ def delete(issue):
         text/html
 
     Args:
+        project:
+            in: manage_issue_permission_required() decorator
+            type: Project
+            description: A Project object whose id is the same as the id in the path.
         issue:
             in: manage_issue_permission_required() decorator
             type: Issue
@@ -144,10 +174,6 @@ def delete(issue):
 def assign(project, issue):
     """Assigns an issue.
 
-    Produces:
-        application/json
-        text/html
-
     Args:
         project:
             in: manage_issue_permission_required() decorator
@@ -159,36 +185,29 @@ def assign(project, issue):
             description: An Issue object whose id is the same as the id in the path.
         priority:
             in: json
-            type: String
+            type: formData
             description: The priority level of the issue.
         assignee_id:
             in: json
-            type: String
+            type: formData
             description: The assignee's id.
 
     Responses:
-        200:
-            Assign successfully.
-        400:
-            Bad request.
-        403:
-            description: Current user does not have the permission and is not the
-                creator of the issue.
-        404:
-            description: Project or issue does not exist.
+        302:
+            description: Redirect to project page.
     """
 
-    body = request.get_json()
-    priority = body.get('priority')
-    assignee_id = body.get('assignee_id')
-    if None in (priority, assignee_id):
-        abort(400)
+    priority = request.form.get('priority')
+    assignee_id = request.form.get('assignee_id')
 
-    assign_validation(project, issue, priority, assignee_id)
+    error = assign_validation(project, issue, priority, assignee_id)
 
-    issue.priority = priority
-    issue.status = 'In Progress'
-    issue.assignee_id = assignee_id
-    db.session.commit()
+    if error is not None:
+        flash(error)
+    else:
+        issue.priority = priority
+        issue.status = 'In Progress'
+        issue.assignee_id = assignee_id
+        db.session.commit()
 
-    return {'success': True}
+    return redirect(url_for('project.project', id=project.id))

@@ -22,6 +22,14 @@ def _get_user_project(id):
     return user_project
 
 
+def _get_issue(project_id, issue_id):
+    user_project = _get_user_project(project_id)
+    issue = Issue.query.get_or_404(issue_id)
+    if user_project.project != issue.project:
+        abort(400)
+    return (user_project, issue)
+
+
 def permission_required(permission):
     """Checks user's permission to access certain project.
 
@@ -54,19 +62,19 @@ def permission_required(permission):
 def manage_issue_permission_required(f):
     @wraps(f)
     def wrapper(id, issue_id, *args, **kwargs):
-        user_project = _get_user_project(id)
-        issue = Issue.query.get_or_404(issue_id)
-
-        if user_project.project != issue.project:
-            abort(400)
+        user_project, issue = _get_issue(id, issue_id)
 
         if (
-            not user_project.can(Permission.MANAGE_ISSUES)
+            issue.status == 'Open'
+            and not user_project.can(Permission.MANAGE_ISSUES)
             and issue.creator != current_user
+        ) or (
+            issue.status == 'In Progress'
+            and not user_project.can(Permission.MANAGE_ISSUES)
         ):
             abort(403)
 
-        return f(issue, *args, **kwargs)
+        return f(user_project.project, issue, *args, **kwargs)
 
     return wrapper
 
@@ -74,10 +82,7 @@ def manage_issue_permission_required(f):
 def assign_issue_permission_required(f):
     @wraps(f)
     def wrapper(id, issue_id, *args, **kwargs):
-        user_project = _get_user_project(id)
-        issue = Issue.query.get_or_404(issue_id)
-        if user_project.project != issue.project:
-            abort(400)
+        user_project, issue = _get_issue(id, issue_id)
         if not user_project.can(Permission.MANAGE_ISSUES):
             abort(403)
 

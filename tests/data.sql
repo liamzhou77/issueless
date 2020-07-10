@@ -88,7 +88,7 @@ VALUES
     'test_description_1',
     'Open',
     1594152441.7036748,
-    1,
+    3,
     1
   );
 
@@ -110,7 +110,7 @@ VALUES
     'High',
     'In Progress',
     1594158622.865205,
-    2,
+    3,
     3,
     1
   );

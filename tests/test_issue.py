@@ -23,7 +23,8 @@ def test_invalid_create(client, auth):
     resp = client.post(
         '/projects/1/issues/create',
         data={
-            'title': 'This is a title with more than 80 characters............................................',
+            'title': 'This is a title with more than 80 characters.....................'
+            '.......................',
             'description': 'awds',
         },
         follow_redirects=True,
@@ -65,47 +66,139 @@ def test_valid_create(client, auth):
     assert new_issue.project_id == 1
 
 
-# def test_invalid_edit(client, auth):
-#     auth.login(3)
+def test_invalid_edit(client, auth):
+    auth.login(1)
 
-#     resp = client.post(
-#         '/projects/1/issues/2/edit',
-#         json={'title': '', 'description': 'test_description'},
-#     )
-#     assert resp.status_code == 422
-#     data = json.loads(resp.data)
-#     assert not data['success']
-#     assert data['error'] == "Please provide the issue's title."
+    assert client.post('/projects/1/issues/1/edit', json={}).status_code == 400
 
-#     resp = client.post(
-#         '/projects/1/issues/2/edit', json={'title': 'test_title', 'description': ''},
-#     )
-#     assert resp.status_code == 422
-#     data = json.loads(resp.data)
-#     assert not data['success']
-#     assert data['error'] == "Please provide the issue's description."
+    resp = client.post(
+        '/projects/1/issues/1/edit',
+        json={'title': '', 'description': 'test_description'},
+    )
+    assert resp.status_code == 422
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == "Please provide the issue's title."
 
-#     resp = client.post(
-#         '/projects/1/issues/2/edit',
-#         json={
-#             'title': 'This is a title with more than 80 characters............................................',
-#             'description': 'awds',
-#         },
-#     )
-#     assert data['error'] == "Issue's title can not be more than 80 character."
+    resp = client.post(
+        '/projects/1/issues/1/edit', json={'title': 'test_title', 'description': ''},
+    )
+    assert resp.status_code == 422
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == "Please provide the issue's description."
 
-#     resp = client.post(
-#         '/projects/1/issues/2/edit',
-#         json={
-#             'title': 'awdsad.',
-#             'description': (
-#                 'This is a description with more than 200 characters...................'
-#                 '......................................................................'
-#                 '......................................................................'
-#             ),
-#         },
-#     )
-#     assert data['error'] == "Issue's description can not be more than 200 characters."
+    resp = client.post(
+        '/projects/1/issues/1/edit',
+        json={
+            'title': (
+                'This is a title with more than 80 characters..........................'
+                '..................'
+            ),
+            'description': 'szxz',
+        },
+    )
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == "Issue's title can not be more than 80 character."
+
+    resp = client.post(
+        '/projects/1/issues/1/edit',
+        json={
+            'title': 'awdsad',
+            'description': (
+                'This is a description with more than 200 characters...................'
+                '......................................................................'
+                '......................................................................'
+            ),
+        },
+    )
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == "Issue's description can not be more than 200 characters."
+
+    resp = client.post(
+        '/projects/1/issues/1/edit',
+        json={'title': 'test_title_1', 'description': 'test_description_1'},
+    )
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == 'No changes have been made.'
+
+    assert (
+        client.post(
+            '/projects/1/issues/2/edit',
+            json={'title': 'test_title', 'description': 'test_description'},
+        ).status_code
+        == 400
+    )
+
+    resp = client.post(
+        '/projects/1/issues/2/edit',
+        json={
+            'title': 'test_title',
+            'description': 'test_description',
+            'priority': 'invalid',
+            'assignee_id': 2,
+        },
+    )
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == 'Please provide a valid priority level.'
+
+    assert (
+        client.post(
+            '/projects/1/issues/2/edit',
+            json={
+                'title': 'test_title',
+                'description': 'test_description',
+                'priority': 'High',
+                'assignee_id': 10,
+            },
+        ).status_code
+        == 404
+    )
+
+    resp = client.post(
+        '/projects/1/issues/2/edit',
+        json={
+            'title': 'test_title_2',
+            'description': 'test_description_2',
+            'priority': 'High',
+            'assignee_id': 3,
+        },
+    )
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == 'No changes have been made.'
+
+
+def test_valid_edit(client, auth):
+    auth.login(1)
+
+    resp = client.post(
+        '/projects/1/issues/1/edit',
+        json={'title': 'test_title', 'description': 'test_description'},
+    )
+    data = json.loads(resp.data)
+    assert data['success']
+    issue = Issue.query.get(1)
+    assert issue.title == 'test_title'
+    assert issue.description == 'test_description'
+
+    resp = client.post(
+        '/projects/1/issues/2/edit',
+        json={
+            'title': 'test_title',
+            'description': 'test_description',
+            'priority': 'Medium',
+            'assignee_id': 3,
+        },
+    )
+    issue = Issue.query.get(2)
+    assert issue.title == 'test_title'
+    assert issue.description == 'test_description'
+    assert issue.priority == 'Medium'
 
 
 def test_delete(client, auth):
@@ -121,28 +214,26 @@ def test_delete(client, auth):
 def test_invalid_assign(client, auth):
     auth.login(2)
 
-    client.post('/projects/1/issues/1/assign', json={}).status_code == 400
-
     resp = client.post(
-        '/projects/1/issues/1/assign', json={'priority': 'invalid', 'assignee_id': 3}
+        '/projects/1/issues/1/assign',
+        data={'priority': 'invalid', 'assignee_id': 3},
+        follow_redirects=True,
     )
-    data = json.loads(resp.data)
-    assert not data['success']
-    assert data['error'] == 'Please provide a valid priority level.'
+    assert b'Please provide a valid priority level.' in resp.data
 
     assert (
         client.post(
-            '/projects/1/issues/1/assign', json={'priority': 'High', 'assignee_id': 10}
+            '/projects/1/issues/1/assign', data={'priority': 'High', 'assignee_id': 10},
         ).status_code
         == 404
     )
 
     resp = client.post(
-        '/projects/1/issues/2/assign', json={'priority': 'High', 'assignee_id': 3}
+        '/projects/1/issues/2/assign',
+        data={'priority': 'High', 'assignee_id': 3},
+        follow_redirects=True,
     )
-    data = json.loads(resp.data)
-    assert not data['success']
-    assert data['error'] == 'The issue has already been assigned to Ryan Cooper.'
+    assert b'The issue has already been assigned to Ryan Cooper.' in resp.data
 
 
 def test_valid_assign(client, auth):
@@ -151,9 +242,8 @@ def test_valid_assign(client, auth):
     issue = Issue.query.get(1)
     assert issue.status == 'Open'
     resp = client.post(
-        '/projects/1/issues/1/assign', json={'priority': 'Medium', 'assignee_id': 3}
+        '/projects/1/issues/1/assign', data={'priority': 'Medium', 'assignee_id': 3}
     )
-    assert resp.status_code == 200
-    assert json.loads(resp.data)['success']
+    assert 'http://localhost/projects/1' == resp.headers['Location']
     assert issue.status == 'In Progress'
     assert issue.assignee_id == 3
