@@ -113,4 +113,24 @@ VALUES
     3,
     3,
     1
+  ),
+  (
+    'test_title_3',
+    'test_description_3',
+    'High',
+    'Resolved',
+    1594437913.684831,
+    2,
+    2,
+    1
+  ),
+  (
+    'test_title_3',
+    'test_description_3',
+    'High',
+    'Closed',
+    1594438470.732012,
+    3,
+    1,
+    1
   );

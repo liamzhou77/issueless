@@ -135,7 +135,7 @@
         </div>
         <div class="card-open-list-body collapse show issue-list-collapse" id="issue-open-list-collapse">
           {% for issue in open_issues %}
-          <div id="card-{{ loop.index }}" class="card card-issue">
+          <div class="card card-issue">
             <div class="card-body">
               <div class="card-title text-truncate">
                 <h6 class="text-truncate" data-filter-by="text">
@@ -179,9 +179,12 @@
                       Edit
                     </a>
                     <div class="dropdown-divider"></div>
-                    <form class="issue-delete-form"
-                      action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}"
-                      data-parent-id="card-{{ loop.index }}">
+                    {% if role == 'Admin' or role == 'Reviewer' %}
+                    <form action="{{ url_for('issue.close', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <button type="submit" class="dropdown-item btn-link text-danger">Mark as Closed</button>
+                    </form>
+                    {% endif %}
+                    <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
                       <button type="submit" class="dropdown-item btn-link text-danger">Delete</button>
                     </form>
                   </div>
@@ -221,8 +224,7 @@
           {% for issue in in_progress_issues %}
           {% set priority = issue.priority %}
           {% set assignee = issue.assignee %}
-          {% set index = loop.index + open_issues_count %}
-          <div id="card-{{ index }}" class="card card-issue">
+          <div class="card card-issue">
             <div class="card-body">
               <div class="card-title text-truncate">
                 <a href="#">
@@ -265,9 +267,10 @@
                       Edit
                     </a>
                     <div class="dropdown-divider"></div>
-                    <form class="issue-delete-form"
-                      action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}"
-                      data-parent-id="card-{{ index }}">
+                    <form action="{{ url_for('issue.close', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <button type="submit" class="dropdown-item btn-link text-danger">Mark as Closed</button>
+                    </form>
+                    <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
                       <button type="submit" class="dropdown-item btn-link text-danger">Delete</button>
                     </form>
                   </div>
@@ -276,6 +279,57 @@
               </div>
             </div>
           </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card-list" data-filter-list="card-resolved-list-body">
+        <div class="card-list-head pb-2">
+          <h5 class="my-auto">Resolved</h5>
+          <form class="ml-auto mr-3">
+            <div class="input-group input-group-round">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="material-icons">filter_list</i>
+                </span>
+              </div>
+              <input type="text" class="form-control filter-list-input" placeholder="Filter issues"
+                aria-label="Filter Issues" />
+            </div>
+          </form>
+          <a class="my-auto mr-3" href="#issue-resolved-list-collapse" data-toggle="collapse">
+            <i class="material-icons" style="font-size: 1.75rem;">add</i>
+          </a>
+        </div>
+        <div class="card-resolved-list-body collapse issue-list-collapse" id="issue-resolved-list-collapse">
+          {% for issue in resolved_issues %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card-list" data-filter-list="card-closed-list-body">
+        <div class="card-list-head pb-2">
+          <h5 class="my-auto">Closed</h5>
+          <form class="ml-auto mr-3">
+            <div class="input-group input-group-round">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="material-icons">filter_list</i>
+                </span>
+              </div>
+              <input type="text" class="form-control filter-list-input" placeholder="Filter issues"
+                aria-label="Filter Issues" />
+            </div>
+          </form>
+          <a class="my-auto mr-3" href="#issue-closed-list-collapse" data-toggle="collapse">
+            <i class="material-icons" style="font-size: 1.75rem;">add</i>
+          </a>
+        </div>
+        <div class="card-closed-list-body collapse issue-list-collapse" id="issue-closed-list-collapse">
+          {% for issue in closed_issues %}
+          {% if issue.priority is not none %}
+          {% else %}
+          {% endif %}
           {% endfor %}
         </div>
       </div>
@@ -594,7 +648,6 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='/js/project/project.js') }}"></script>
 <script src="{{ url_for('static', filename='/js/project/edit_issue.js') }}"></script>
-<script src="{{ url_for('static', filename='/js/project/delete_issue.js') }}"></script>
 {% if role == 'Admin' %}
 <script src="{{ url_for('static', filename='/js/project/members.js') }}"></script>
 <script src="{{ url_for('static', filename='/js/project/edit_project.js') }}"></script>

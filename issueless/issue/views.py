@@ -9,6 +9,7 @@ from issueless.decorators import (
 from issueless.issue import bp
 from issueless.issue.helpers import (
     assign_validation,
+    close_validation,
     create_validation,
     edit_validation,
 )
@@ -95,9 +96,9 @@ def edit(project, issue):
 
     Responses:
         200:
-            Edit successfully.
+            description: Edit successfully.
         400:
-            Bad request.
+            description: Bad request.
         403:
             description: Forbidden.
         404:
@@ -152,10 +153,10 @@ def delete(project, issue):
             description: An Issue object whose id is the same as the id in the path.
 
     Responses:
-        200:
-            Delete successfully.
+        302:
+            description: Redirect to project page.
         400:
-            Bad request.
+            description: Bad request.
         403:
             description: Current user does not have the permission and is not the
                 creator of the issue.
@@ -165,7 +166,7 @@ def delete(project, issue):
 
     db.session.delete(issue)
     db.session.commit()
-    return {'success': True}
+    return redirect(url_for('project.project', id=project.id))
 
 
 @bp.route('/<int:issue_id>/assign', methods=['POST'])
@@ -208,6 +209,21 @@ def assign(project, issue):
         issue.priority = priority
         issue.status = 'In Progress'
         issue.assignee_id = assignee_id
+        db.session.commit()
+
+    return redirect(url_for('project.project', id=project.id))
+
+
+@bp.route('/<int:issue_id>/close', methods=['POST'])
+@login_required
+@manage_issue_permission_required
+def close(project, issue):
+    error = close_validation(issue)
+
+    if error is not None:
+        flash(error)
+    else:
+        issue.status = 'Closed'
         db.session.commit()
 
     return redirect(url_for('project.project', id=project.id))

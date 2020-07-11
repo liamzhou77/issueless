@@ -9,11 +9,14 @@ def create_validation(title, description):
 def edit_validation(
     issue, title, description, project=None, priority=None, assignee_id=None
 ):
+    if issue.status != 'Open' and issue.status != 'In Progress':
+        raise ValidationError('You can only edit an open or in progress issue.')
+
     error = _title_description_validation(title, description)
     if error is not None:
         raise ValidationError(error)
 
-    if project is None:
+    if issue.status == 'Open':
         if issue.title == title and issue.description == description:
             raise ValidationError('No changes have been made.')
     else:
@@ -33,16 +36,17 @@ def edit_validation(
             raise ValidationError('No changes have been made.')
 
 
-def edit_in_progress_issue_validation(project, issue, priority, assignee_id):
-    if priority != 'High' and priority != 'Medium' and priority != 'Low':
-        raise ValidationError('Please provide a valid priority level.')
-
-    assignee = User.query.get_or_404(assignee_id)
-    if assignee not in project.users:
-        raise ValidationError('The user you chose is not a member of the project.')
-
-    if priority == issue.priority and assignee == issue.assignee:
-        raise ValidationError('No changes have been made.')
+def _title_description_validation(title, description):
+    error = None
+    if not title:
+        error = "Please provide the issue's title."
+    if len(title) > 80:
+        error = "Issue's title can not be more than 80 character."
+    if not description:
+        error = "Please provide the issue's description."
+    if len(description) > 200:
+        error = "Issue's description can not be more than 200 characters."
+    return error
 
 
 def assign_validation(project, issue, priority, assignee_id):
@@ -60,14 +64,10 @@ def assign_validation(project, issue, priority, assignee_id):
     return error
 
 
-def _title_description_validation(title, description):
+def close_validation(issue):
     error = None
-    if not title:
-        error = "Please provide the issue's title."
-    if len(title) > 80:
-        error = "Issue's title can not be more than 80 character."
-    if not description:
-        error = "Please provide the issue's description."
-    if len(description) > 200:
-        error = "Issue's description can not be more than 200 characters."
+    if issue.status == 'Resolved':
+        error = 'The issue has already been resolved.'
+    elif issue.status == 'Closed':
+        error = 'The issue has already been marked as closed.'
     return error

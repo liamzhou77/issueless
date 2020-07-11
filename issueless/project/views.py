@@ -39,6 +39,12 @@ def project(user_project):
                 Issue.timestamp
             )
         ),
+        resolved_issues=project.issues.filter_by(status='Resolved').order_by(
+            Issue.timestamp
+        ),
+        closed_issues=project.issues.filter_by(status='Closed').order_by(
+            Issue.timestamp
+        ),
     )
 
 

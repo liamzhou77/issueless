@@ -72,6 +72,15 @@ def test_invalid_edit(client, auth):
     assert client.post('/projects/1/issues/1/edit', json={}).status_code == 400
 
     resp = client.post(
+        '/projects/1/issues/3/edit',
+        json={'title': 'test_title', 'description': 'test_description'},
+    )
+    assert resp.status_code == 422
+    data = json.loads(resp.data)
+    assert not data['success']
+    assert data['error'] == 'You can only edit an open or in progress issue.'
+
+    resp = client.post(
         '/projects/1/issues/1/edit',
         json={'title': '', 'description': 'test_description'},
     )
@@ -206,8 +215,7 @@ def test_delete(client, auth):
 
     assert Issue.query.get(2) is not None
     resp = client.post('/projects/1/issues/2/delete')
-    assert resp.status_code == 200
-    assert json.loads(resp.data)['success']
+    assert 'http://localhost/projects/1' == resp.headers['Location']
     assert Issue.query.get(2) is None
 
 
@@ -247,3 +255,23 @@ def test_valid_assign(client, auth):
     assert 'http://localhost/projects/1' == resp.headers['Location']
     assert issue.status == 'In Progress'
     assert issue.assignee_id == 3
+
+
+def test_invalid_close(client, auth):
+    auth.login(1)
+
+    resp = client.post('/projects/1/issues/3/close', follow_redirects=True,)
+    assert b'The issue has already been resolved.' in resp.data
+
+    resp = client.post('/projects/1/issues/4/close', follow_redirects=True,)
+    assert b'The issue has already been marked as closed.' in resp.data
+
+
+def test_valid_close(client, auth):
+    auth.login(1)
+
+    issue = Issue.query.get(1)
+    assert issue.status == 'Open'
+    resp = client.post('/projects/1/issues/1/close')
+    assert 'http://localhost/projects/1' == resp.headers['Location']
+    assert issue.status == 'Closed'

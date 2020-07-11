@@ -69,8 +69,7 @@ def manage_issue_permission_required(f):
             and not user_project.can(Permission.MANAGE_ISSUES)
             and issue.creator != current_user
         ) or (
-            issue.status == 'In Progress'
-            and not user_project.can(Permission.MANAGE_ISSUES)
+            issue.status != 'Open' and not user_project.can(Permission.MANAGE_ISSUES)
         ):
             abort(403)
 
