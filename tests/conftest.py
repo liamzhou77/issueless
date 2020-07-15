@@ -1,3 +1,4 @@
+import shutil
 import os
 
 import pytest
@@ -19,6 +20,7 @@ def app():
                 'postgresql://liamzhou@localhost/test_issueless'
             ),
             'WTF_CSRF_ENABLED': False,
+            'UPLOAD_PATH': 'tests/uploads',
         }
     )
     app_context = app.app_context()
@@ -29,11 +31,17 @@ def app():
     Role.insert_roles()  # this method is tested in test_role_model.py
     db.session.execute(_data_sql)
     db.session.commit()
+    for i in range(1, 5):
+        os.makedirs(os.path.join(app.config['UPLOAD_PATH'], str(i)))
 
     yield app
 
     db.session.remove()
     db.drop_all()
+    for i in range(1, 5):
+        shutil.rmtree(
+            os.path.join(app.config['UPLOAD_PATH']), ignore_errors=True,
+        )
 
     app_context.pop()
 

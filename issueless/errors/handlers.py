@@ -25,6 +25,11 @@ def not_found(error):
     return render_template('/errors/404.html'), 404
 
 
+@bp.errorhandler(413)
+def too_large(e):
+    return "File must be 5.0 MB or smaller.", 413
+
+
 @bp.app_errorhandler(500)
 def internal_server_error(error):
     db.session.rollback()

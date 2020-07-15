@@ -1,6 +1,7 @@
-from issueless.models import Issue
-
 import json
+import os
+
+from issueless.models import Issue
 
 
 def test_invalid_create(client, auth):
@@ -46,7 +47,7 @@ def test_invalid_create(client, auth):
     assert b'Issue&#39;s description can not be more than 200 characters.' in resp.data
 
 
-def test_valid_create(client, auth):
+def test_valid_create(app, client, auth):
     auth.login(1)
 
     old_issue_count = Issue.query.count()
@@ -64,6 +65,7 @@ def test_valid_create(client, auth):
     assert new_issue.creator_id == 1
     assert new_issue.assignee_id is None
     assert new_issue.project_id == 1
+    assert os.path.isdir(os.path.join(app.config['UPLOAD_PATH'], '5'))
 
 
 def test_invalid_edit(client, auth):
@@ -210,13 +212,14 @@ def test_valid_edit(client, auth):
     assert issue.priority == 'Medium'
 
 
-def test_delete(client, auth):
+def test_delete(app, client, auth):
     auth.login(2)
 
     assert Issue.query.get(2) is not None
     resp = client.post('/projects/1/issues/2/delete')
     assert 'http://localhost/projects/1' == resp.headers['Location']
     assert Issue.query.get(2) is None
+    assert not os.path.isdir(os.path.join(app.config['UPLOAD_PATH'], '2'))
 
 
 def test_invalid_assign(client, auth):

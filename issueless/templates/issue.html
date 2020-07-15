@@ -1,0 +1,271 @@
+{% import 'macros.html' as macros %}
+
+{% set project = user_project.project %}
+{% set role = user_project.role.name %}
+{% set creator = issue.creator %}
+{% set assignee = issue.assignee %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css?family=Gothic+A1" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}" media="all" />
+  <link href="https://fonts.googleapis.com/css2?family=Satisfy&display=swap" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/f8c044b431.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
+  <title>{{ title }}</title>
+</head>
+
+<body>
+  <div class="layout layout-nav-top layout-sidebar">
+    <div class="navbar navbar-expand bg-dark navbar-dark sticky-top py-0">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('index') }}"
+          style="font-family: 'Satisfy', cursive; font-size: 2rem;">Issueless</a>
+        <div class="d-flex align-items-center">
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse"
+            aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+        </div>
+        <div class="collapse navbar-collapse justify-content-between" id="navbar-collapse">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="false">
+                <i class="material-icons">notifications</i>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right notification-dropdown p-0"
+                aria-labelledby="notificationDropdown">
+                <div class="notification-content">
+                  <button class="btn btn-link" style="color: #6c757d;">
+                    <u>View All</u>
+                  </button>
+                  <button class="btn btn-link float-right" style="color: #6c757d;">
+                    <u>Mark All as Read</u>
+                  </button>
+                  <ul class="list-group list-group-flush notification-view-unread">
+                    <li id="notification-no-unread" class="list-group-item py-5" hidden>
+                      <h3 class="text-center">No Unread Notifications</h3>
+                    </li>
+                    <li id="notification-no-read-and-unread" class="list-group-item py-5" hidden>
+                      <h3 class="text-center">No Notifications</h3>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </li>
+            <li class="nav-item mx-1">
+              <a href="{{ url_for('auth.logout') }}" class="nav-link">
+                <i class="fas fa-user-times"></i>
+                Log Out
+              </a>
+            </li>
+            <li class="nav-item">
+              <img src="{{ current_user.avatar() }}" class="avatar" alt="Avatar" />
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="breadcrumb-bar navbar bg-white sticky-top">
+      <div class="container px-0">
+        {{ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', url_for('project.project', id=project.id)), ('Issue', None)]) }}
+        <div class="dropdown">
+          <button class="btn btn-round" role="button" data-toggle="dropdown" aria-expanded="false">
+            <i class="material-icons">settings</i>
+          </button>
+          <div class="dropdown-menu dropdown-menu-right">
+            {% if role == 'Admin' or role == 'Reviewer' %}
+            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#issue-edit-modal">Edit Issue</a>
+            <div class="dropdown-divider"></div>
+            <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
+              <button type="submit" class="dropdown-item btn-link text-danger">
+                Delete Issue
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="sidebar-container">
+        <button class="btn btn-primary btn-round btn-floating btn-lg d-lg-none" type="button" data-toggle="collapse"
+          data-target="#sidebar-collapse" aria-expanded="false">
+          <i class="material-icons">more_horiz</i>
+          <i class="material-icons">close</i>
+        </button>
+        <div class="sidebar collapse" id="sidebar-collapse">
+          <div class="sidebar-content">
+            <div class="comment-team-sidebar text-small">
+              <div class="comment-team-sidebar-top p-0 mt-3 mx-3">
+                <div class="media align-items-center border-bottom pb-2">
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" data-toggle="tooltip"
+                    data-placement="left" title="Assigned to {{ assignee.fullname() }}" class="avatar avatar-lg mr-2">
+                  <div class="media-body">
+                    <h5 class="mb-1">{{ issue.title }}</h5>
+                    <p>{{ issue.description }}</p>
+                  </div>
+                </div>
+                <div class=" mt-2 text-truncate p-2">
+                  <div class="row mb-2">
+                    <div class="col-sm-6">
+                      <h6 class="d-inline">Status:</h6> {{ issue.status }}
+                    </div>
+                    <div class="col-sm-6">
+                      <h6 class="d-inline">Priority:</h6> {{ issue.priority }}
+                      {% if issue.priority == 'High' %}
+                      &#x1F525;
+                      {% endif %}
+                    </div>
+                  </div>
+                  <h6 class="d-inline">Creator:</h6> <img src="{{ creator.avatar() }}" alt="{{ creator.fullname() }}"
+                    class="avatar"> {{ creator.fullname() }}
+                </div>
+              </div>
+              <div class="comment-team-sidebar-bottom">
+                <div id="file-search">
+                  {% if role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee %}
+                  <ul class="d-none dz-template">
+                    <li class="list-group-item dz-preview dz-file-preview" data-project-id="{{ project.id }}"
+                      data-issue-id="{{ issue.id }}">
+                      <div class="media align-items-center dz-details">
+                        <ul class="avatars">
+                          <li>
+                            <div class="avatar bg-primary dz-file-representation">
+                              <i class="material-icons">insert_drive_file</i>
+                            </div>
+                          </li>
+                          <li>
+                            <img alt="{{ current_user.fullname() }}" src="{{ current_user.avatar() }}" class="avatar"
+                              data-title="{{ current_user.fullname() }}" data-toggle="tooltip" />
+                          </li>
+                        </ul>
+                        <div class="media-body d-flex justify-content-between align-items-center">
+                          <div class="dz-file-details">
+                            <a href="#" class="dz-filename"></a>
+                            <br>
+                            <span class="text-small dz-size"></span>
+                          </div>
+                          <img alt="Loader" src="{{ url_for('static', filename='images/loader.svg') }}"
+                            class="dz-loading" />
+                          <div class="dropdown">
+                            <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"
+                              aria-expanded="false">
+                              <i class="material-icons">more_vert</i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                              <a class="dropdown-item" href="#">Download</a>
+                              <div class="dropdown-divider"></div>
+                              <form class="file-delete-form" action="#" method="POST">
+                                <button type="submit" class="dropdown-item text-danger">Delete</button>
+                              </form>
+                            </div>
+                          </div>
+                          <button class="btn btn-danger btn-sm dz-remove" data-dz-remove>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                      <div class="progress dz-progress">
+                        <div class="progress-bar dz-upload" data-dz-uploadprogress></div>
+                      </div>
+                    </li>
+                  </ul>
+                  <form id="issue-dropzone" class="dropzone mb-2"
+                    action="{{ url_for('issue.upload', id=project.id, issue_id=issue.id) }}">
+                    <span class="dz-message mt-2">Drop files here or click here to upload</span>
+                  </form>
+                  {% endif %}
+                  <ul class="list-group list-group-activity dropzone-previews flex-column-reverse list-group-flush">
+                    {% for file in files %}
+                    <li class="list-group-item">
+                      <div class="media align-items-center">
+                        <ul class="avatars">
+                          <li>
+                            <div class="avatar bg-primary">
+                              <i class="material-icons">insert_drive_file</i>
+                            </div>
+                          </li>
+                          <li>
+                            <img alt="{{ file.uploader.fullname() }}" src="{{ file.uploader.avatar() }}" class="avatar"
+                              title="{{ file.uploader.fullname() }}" data-toggle="tooltip" />
+                          </li>
+                        </ul>
+                        <div class="media-body d-flex justify-content-between align-items-center">
+                          <div>
+                            <a
+                              href="{{ url_for('issue.download', id=project.id, issue_id=issue.id, filename=file.filename) }}">{{ file.filename }}</a>
+                            <br>
+                            <span class="text-small">{{ file.size }}</span>
+                          </div>
+                          <div class="dropdown">
+                            <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"
+                              aria-expanded="false">
+                              <i class="material-icons">more_vert</i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                              <a class="dropdown-item"
+                                href="{{ url_for('issue.download', id=project.id, issue_id=issue.id, filename=file.filename) }}">Download</a>
+                              <div class="dropdown-divider"></div>
+                              <form class="file-delete-form"
+                                action="{{ url_for('issue.delete_file', id=project.id, issue_id=issue.id, filename=file.filename) }}"
+                                method="POST">
+                                <button type="submit" class="dropdown-item text-danger" data-dz-remove>Delete</button>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+  </script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+  </script>
+  <script src="{{ url_for('static', filename='js/packages/autosize.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/flatpickr.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/prism.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/draggable.bundle.legacy.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/swap-animation.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/dropzone.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/list.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/packages/moment.js') }}"></script>
+
+  <script src="{{ url_for('static', filename='js/base/helpers.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/base/base.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/base/notifications.js') }}"></script>
+
+  {% if role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee %}
+  <script src="{{ url_for('static', filename='js/issue/dropzone.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/issue/delete_file.js') }}"></script>
+  {% endif %}
+</body>
+
+</html>

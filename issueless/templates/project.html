@@ -4,11 +4,10 @@
 {% set project = current_user_project.project %}
 {% set role = current_user_project.role.name %}
 {% set user_count = member_user_projects.count() %}
-{% set open_issues_count = open_issues.count() %}
 
 {% block header %}
 {% if role == 'Admin' %}
-<link rel="stylesheet" href="{{ url_for('static', filename='/css/autocomplete.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/autocomplete.css') }}" />
 <style>
   .member:hover {
     background: #dee0e1;
@@ -53,7 +52,7 @@
 
 {% block content %}
 <div class="page-header">
-  <h1 class="text-truncate">{{ project.title }}</h1>
+  <h1>{{ project.title }}</h1>
   <p class="lead">{{ project.description }}</p>
   <div class="d-flex align-items-center">
     <ul class="avatars">
@@ -227,7 +226,7 @@
           <div class="card card-issue">
             <div class="card-body">
               <div class="card-title text-truncate">
-                <a href="#">
+                <a href="{{ url_for('issue.issue', id=project.id, issue_id=issue.id) }}">
                   <h6 class="text-truncate" data-filter-by="text">
                     {{ issue.title }}
                   </h6>
@@ -366,8 +365,8 @@
         <div class="col-6">
           <span class="media media-member member">
             <img src="{{ user.avatar() }}" alt="{{ user.fullname() }}" class="avatar avatar-lg" />
-            <div class="media-body text-truncate">
-              <h6 class="mb-0 text-truncate" data-filter-by="text">
+            <div class="media-body">
+              <h6 class="mb-0" data-filter-by="text">
                 {{ user.fullname() }}
               </h6>
               <span data-filter-by="text" class="text-body">{{ member_role }}</span>
@@ -646,14 +645,14 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='/js/project/project.js') }}"></script>
-<script src="{{ url_for('static', filename='/js/project/edit_issue.js') }}"></script>
+<script src="{{ url_for('static', filename='js/project/project.js') }}"></script>
+<script src="{{ url_for('static', filename='js/project/edit_issue.js') }}"></script>
 {% if role == 'Admin' %}
-<script src="{{ url_for('static', filename='/js/project/members.js') }}"></script>
-<script src="{{ url_for('static', filename='/js/project/edit_project.js') }}"></script>
-<script src="{{ url_for('static', filename='/js/project/invite_user.js') }}"></script>
+<script src="{{ url_for('static', filename='js/project/members.js') }}"></script>
+<script src="{{ url_for('static', filename='js/project/edit_project.js') }}"></script>
+<script src="{{ url_for('static', filename='js/project/invite_user.js') }}"></script>
 {% endif %}
 {% if role == 'Admin' or role == 'Reviewer' %}
-<script src="{{ url_for('static', filename='/js/project/assign_issue.js') }}"></script>
+<script src="{{ url_for('static', filename='js/project/assign_issue.js') }}"></script>
 {% endif %}
 {% endblock %}

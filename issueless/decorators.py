@@ -59,6 +59,21 @@ def permission_required(permission):
     return decorator
 
 
+def access_issue_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project, issue = _get_issue(id, issue_id)
+
+        if issue.assignee is None:
+            abort(400)
+        if not user_project.can(Permission.READ_PROJECT):
+            abort(403)
+
+        return f(user_project, issue, *args, **kwargs)
+
+    return wrapper
+
+
 def manage_issue_permission_required(f):
     @wraps(f)
     def wrapper(id, issue_id, *args, **kwargs):
@@ -83,6 +98,26 @@ def assign_issue_permission_required(f):
     def wrapper(id, issue_id, *args, **kwargs):
         user_project, issue = _get_issue(id, issue_id)
         if not user_project.can(Permission.MANAGE_ISSUES):
+            abort(403)
+
+        return f(user_project.project, issue, *args, **kwargs)
+
+    return wrapper
+
+
+def upload_file_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project, issue = _get_issue(id, issue_id)
+
+        if issue.status != 'In Progress':
+            abort(400)
+
+        if (
+            not user_project.can(Permission.MANAGE_ISSUES)
+            and issue.creator != current_user
+            and issue.assignee != current_user
+        ):
             abort(403)
 
         return f(user_project.project, issue, *args, **kwargs)

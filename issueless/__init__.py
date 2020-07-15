@@ -25,6 +25,8 @@ def create_app(test_config=None):
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         REMEMBER_COOKIE_DURATION=timedelta(days=3, hours=1),
+        MAX_CONTENT_LENGTH=5 * 1024 * 1024,
+        UPLOAD_PATH='uploads',
     )
     app.config.from_pyfile('config.py', silent=True)
     if test_config is not None:
@@ -52,6 +54,7 @@ def create_app(test_config=None):
     def make_shell_context():
         """Defines shell context for debugging."""
         from issueless.models import (
+            File,
             Issue,
             Notification,
             Project,
@@ -68,6 +71,7 @@ def create_app(test_config=None):
             'Role': Role,
             'Notification': Notification,
             'Issue': Issue,
+            'File': File,
         }
 
     return app

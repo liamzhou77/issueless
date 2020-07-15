@@ -35,6 +35,12 @@ class User(UserMixin, db.Model):
         lazy='dynamic',
         primaryjoin='User.id == Issue.assignee_id',
     )
+    files = db.relationship(
+        'File',
+        backref='uploader',
+        lazy='dynamic',
+        primaryjoin='User.id == File.uploader_id',
+    )
 
     def __repr__(self):
         return f'< User {self.email}, {self.fullname()}, {self.username} >'
@@ -311,8 +317,32 @@ class Issue(db.Model):
     assignee_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
 
+    files = db.relationship(
+        'File', backref='issue', lazy='dynamic', cascade='all, delete-orphan'
+    )
+
     def __repr__(self):
         return (
             f'< Issue {self.title}, {self.status}, {self.priority}, creator '
             f'{self.creator.fullname()}, project {self.project.title} >'
+        )
+
+
+class File(db.Model):
+    __tablename__ = 'files'
+    __table_args__ = (
+        db.UniqueConstraint('issue_id', 'filename', name='issue_filename'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(), nullable=False)
+    size = db.Column(db.String(), nullable=False)
+    timestamp = db.Column(db.Float, index=True, default=time, nullable=False)
+    uploader_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    issue_id = db.Column(db.Integer, db.ForeignKey('issues.id'), nullable=False)
+
+    def __repr__(self):
+        return (
+            f'< File {self.filename}, Uploader {self.uploader.fullname()}, Issue '
+            f'{self.issue.title} >'
         )
