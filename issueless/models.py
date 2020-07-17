@@ -35,12 +35,8 @@ class User(UserMixin, db.Model):
         lazy='dynamic',
         primaryjoin='User.id == Issue.assignee_id',
     )
-    files = db.relationship(
-        'File',
-        backref='uploader',
-        lazy='dynamic',
-        primaryjoin='User.id == File.uploader_id',
-    )
+    files = db.relationship('File', backref='uploader', lazy='dynamic')
+    comments = db.relationship('Comment', backref='user', lazy='dynamic')
 
     def __repr__(self):
         return f'< User {self.email}, {self.fullname()}, {self.username} >'
@@ -320,6 +316,9 @@ class Issue(db.Model):
     files = db.relationship(
         'File', backref='issue', lazy='dynamic', cascade='all, delete-orphan'
     )
+    comments = db.relationship(
+        'Comment', backref='issue', lazy='dynamic', cascade='all, delete-orphan'
+    )
 
     def __repr__(self):
         return (
@@ -346,3 +345,16 @@ class File(db.Model):
             f'< File {self.filename}, Uploader {self.uploader.fullname()}, Issue '
             f'{self.issue.title} >'
         )
+
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(10000), nullable=False)
+    timestamp = db.Column(db.Float, index=True, default=time, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    issue_id = db.Column(db.Integer, db.ForeignKey('issues.id'), nullable=False)
+
+    def __repr__(self):
+        return f'< Comment {self.id}, {self.user.fullname()}, {self.issue.title} >'

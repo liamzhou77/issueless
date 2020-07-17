@@ -58,18 +58,7 @@ def assign_validation(project, issue, priority, assignee_id):
     assignee = User.query.get_or_404(assignee_id)
     if assignee not in project.users:
         error = 'The user you chose is not a member of the project.'
-    if issue.assignee is not None:
-        error = f'The issue has already been assigned to {issue.assignee.fullname()}.'
 
-    return error
-
-
-def close_validation(issue):
-    error = None
-    if issue.status == 'Resolved':
-        error = 'The issue has already been resolved.'
-    elif issue.status == 'Closed':
-        error = 'The issue has already been marked as closed.'
     return error
 
 
@@ -79,3 +68,12 @@ def sizeof_fmt(num, suffix='b'):
             return "%3.1f %s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+def comment_validation(text):
+    error = None
+    if not text:
+        error = "Please provide the comment's text."
+    if len(text) > 10000:
+        error = "Comment can not be more than 10000 characters."
+    return error

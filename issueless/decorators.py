@@ -11,7 +11,7 @@ from functools import wraps
 from flask import abort
 from flask_login import current_user
 
-from issueless.models import Issue, Permission, Project
+from issueless.models import Comment, File, Issue, Permission, Project
 
 
 def _get_user_project(id):
@@ -28,6 +28,16 @@ def _get_issue(project_id, issue_id):
     if user_project.project != issue.project:
         abort(400)
     return (user_project, issue)
+
+
+def _get_file(project_id, issue_id, filename):
+    user_project, issue = _get_issue(project_id, issue_id)
+    file = File.query.filter_by(filename=filename).first()
+    if file is None:
+        abort(404)
+    if file.issue != issue:
+        abort(400)
+    return (user_project, issue, file)
 
 
 def permission_required(permission):
@@ -97,6 +107,8 @@ def assign_issue_permission_required(f):
     @wraps(f)
     def wrapper(id, issue_id, *args, **kwargs):
         user_project, issue = _get_issue(id, issue_id)
+        if issue.status != 'Open':
+            abort(400)
         if not user_project.can(Permission.MANAGE_ISSUES):
             abort(403)
 
@@ -105,7 +117,52 @@ def assign_issue_permission_required(f):
     return wrapper
 
 
-def upload_file_permission_required(f):
+def close_issue_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project, issue = _get_issue(id, issue_id)
+        if issue.status != 'Open' and issue.status != 'In Progress':
+            abort(400)
+        if not user_project.can(Permission.MANAGE_ISSUES):
+            abort(403)
+
+        return f(user_project.project, issue, *args, **kwargs)
+
+    return wrapper
+
+
+def download_file_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, filename, *args, **kwargs):
+        user_project, issue, file = _get_file(id, issue_id, filename)
+        if issue.assignee is None:
+            abort(400)
+        if not user_project.can(Permission.READ_PROJECT):
+            abort(403)
+
+        return f(issue, file, *args, **kwargs)
+
+    return wrapper
+
+
+def delete_file_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, filename, *args, **kwargs):
+        user_project, issue, file = _get_file(id, issue_id, filename)
+        if issue.assignee is None:
+            abort(400)
+        if (
+            not user_project.can(Permission.MANAGE_ISSUES)
+            and file.uploader != current_user
+        ):
+            abort(403)
+
+        return f(issue, file, *args, **kwargs)
+
+    return wrapper
+
+
+def comment_and_upload_permission_required(f):
     @wraps(f)
     def wrapper(id, issue_id, *args, **kwargs):
         user_project, issue = _get_issue(id, issue_id)
@@ -121,5 +178,23 @@ def upload_file_permission_required(f):
             abort(403)
 
         return f(user_project.project, issue, *args, **kwargs)
+
+    return wrapper
+
+
+def delete_comment_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, comment_id, *args, **kwargs):
+        user_project, issue = _get_issue(id, issue_id)
+        comment = Comment.query.get_or_404(comment_id)
+        if comment.issue != issue:
+            abort(400)
+        if (
+            not user_project.can(Permission.MANAGE_ISSUES)
+            and comment.user != current_user
+        ):
+            abort(403)
+
+        return f(user_project.project, issue, comment, *args, **kwargs)
 
     return wrapper

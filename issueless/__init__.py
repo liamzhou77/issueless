@@ -54,6 +54,7 @@ def create_app(test_config=None):
     def make_shell_context():
         """Defines shell context for debugging."""
         from issueless.models import (
+            Comment,
             File,
             Issue,
             Notification,
@@ -72,6 +73,7 @@ def create_app(test_config=None):
             'Notification': Notification,
             'Issue': Issue,
             'File': File,
+            'Comment': Comment,
         }
 
     return app

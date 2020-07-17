@@ -17,19 +17,23 @@ from werkzeug.utils import secure_filename
 from issueless.decorators import (
     access_issue_permission_required,
     assign_issue_permission_required,
+    close_issue_permission_required,
+    delete_comment_permission_required,
+    delete_file_permission_required,
+    download_file_permission_required,
     manage_issue_permission_required,
     permission_required,
-    upload_file_permission_required,
+    comment_and_upload_permission_required,
 )
 from issueless.issue import bp
 from issueless.issue.helpers import (
     assign_validation,
-    close_validation,
+    comment_validation,
     create_validation,
     edit_validation,
     sizeof_fmt,
 )
-from issueless.models import db, File, Issue, Permission
+from issueless.models import db, Comment, File, Issue, Permission, UserProject
 
 
 @bp.route('/<int:issue_id>')
@@ -43,6 +47,10 @@ def issue(user_project, issue):
         user_project=user_project,
         issue=issue,
         files=issue.files.order_by(File.timestamp),
+        comments=issue.comments.order_by(Comment.timestamp.desc()),
+        member_user_projects=user_project.project.user_projects.order_by(
+            UserProject.timestamp
+        ),
     )
 
 
@@ -267,17 +275,17 @@ def assign(project, issue):
 
 @bp.route('/<int:issue_id>/close', methods=['POST'])
 @login_required
-@manage_issue_permission_required
+@close_issue_permission_required
 def close(project, issue):
     """Marks an issue as closed.
 
     Args:
         project:
-            in: manage_issue_permission_required() decorator
+            in: close_issue_permission_required() decorator
             type: Project
             description: A Project object whose id is the same as the id in the path.
         issue:
-            in: manage_issue_permission_required() decorator
+            in: close_issue_permission_required() decorator
             type: Issue
             description: An Issue object whose id is the same as the id in the path.
 
@@ -293,20 +301,15 @@ def close(project, issue):
             description: Project or issue does not exist.
     """
 
-    error = close_validation(issue)
-
-    if error is not None:
-        flash(error)
-    else:
-        issue.status = 'Closed'
-        db.session.commit()
+    issue.status = 'Closed'
+    db.session.commit()
 
     return redirect(url_for('project.project', id=project.id))
 
 
 @bp.route('/<int:issue_id>/upload', methods=['POST'])
 @login_required
-@upload_file_permission_required
+@comment_and_upload_permission_required
 def upload(project, issue):
     """Uploads a new file.
 
@@ -316,11 +319,11 @@ def upload(project, issue):
 
     Args:
         project:
-            in: upload_file_permission_required() decorator
+            in: comment_and_upload_permission_required() decorator
             type: Project
             description: A Project object whose id is the same as the id in the path.
         issue:
-            in: upload_file_permission_required() decorator
+            in: comment_and_upload_permission_required() decorator
             type: Issue
             description: An Issue object whose id is the same as the id in the path.
 
@@ -358,34 +361,49 @@ def upload(project, issue):
     return {'filename': filename, 'size': size}
 
 
-@bp.route('/<int:issue_id>/uploads')
+@bp.route('/<int:issue_id>/uploads/<filename>')
 @login_required
-@access_issue_permission_required
-def download(project, issue):
+@download_file_permission_required
+def download(issue, file):
     """Sends the requested file to user."""
-    filename = request.args.get('filename')
-    if filename is None:
-        abort(400)
-    if issue.files.filter_by(filename=filename).first() is None:
-        abort(404)
     return send_from_directory(
-        os.path.join('..', current_app.config['UPLOAD_PATH'], str(issue.id)), filename,
+        os.path.join('..', current_app.config['UPLOAD_PATH'], str(issue.id)),
+        file.filename,
     )
 
 
-@bp.route('/<int:issue_id>/uploads/delete', methods=['POST'])
+@bp.route('/<int:issue_id>/uploads/<filename>/delete', methods=['POST'])
 @login_required
-@upload_file_permission_required
-def delete_file(project, issue):
+@delete_file_permission_required
+def delete_file(issue, file):
     """Removes file form database and file system."""
-    filename = request.args.get('filename')
-    if filename is None:
-        abort(400)
-
-    file = issue.files.filter_by(filename=filename).first()
-    if file is None:
-        abort(404)
     db.session.delete(file)
     db.session.commit()
-    os.remove(os.path.join(current_app.config['UPLOAD_PATH'], str(issue.id), filename))
+    os.remove(
+        os.path.join(current_app.config['UPLOAD_PATH'], str(issue.id), file.filename)
+    )
     return {'success': True}
+
+
+@bp.route('/<int:issue_id>/comment', methods=['POST'])
+@login_required
+@comment_and_upload_permission_required
+def comment(project, issue):
+    text = request.form.get('text')
+    error = comment_validation(text)
+    if error is not None:
+        flash(error)
+    else:
+        new_comment = Comment(text=text, user=current_user, issue=issue)
+        db.session.add(new_comment)
+        db.session.commit()
+    return redirect(url_for('issue.issue', id=project.id, issue_id=issue.id))
+
+
+@bp.route('/<int:issue_id>/comments/<int:comment_id>/delete', methods=['POST'])
+@login_required
+@delete_comment_permission_required
+def delete_comment(project, issue, comment):
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for('issue.issue', id=project.id, issue_id=issue.id))

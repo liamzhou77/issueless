@@ -242,15 +242,17 @@
                 </span>
               </div>
               <div class="card-meta">
-                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}">
-                  {% if role == 'Admin' or role == 'Reviewer' %}
-                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar"
-                    style="margin-right: 17px;">
-                  {% else %}
-                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar"
-                    style="margin-right: 70px;">
-                  {% endif %}
+
+                {% if role == 'Admin' or role == 'Reviewer' %}
+                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}" style="margin-right: 17px;">
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar">
                 </span>
+                {% else %}
+                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}" style="margin-right: 70px;">
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar">
+                </span>
+                {% endif %}
+
                 {% if role == 'Admin' or role == 'Reviewer' %}
                 <div class="dropdown card-options">
                   <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"

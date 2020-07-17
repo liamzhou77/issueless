@@ -25,75 +25,51 @@
 <body>
   <div class="layout layout-nav-top layout-sidebar">
     <div class="navbar navbar-expand bg-dark navbar-dark sticky-top py-0">
-      <div class="container">
-        <a class="navbar-brand" href="{{ url_for('index') }}"
-          style="font-family: 'Satisfy', cursive; font-size: 2rem;">Issueless</a>
-        <div class="d-flex align-items-center">
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse"
-            aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-        </div>
-        <div class="collapse navbar-collapse justify-content-between" id="navbar-collapse">
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
-                aria-expanded="false">
-                <i class="material-icons">notifications</i>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right notification-dropdown p-0"
-                aria-labelledby="notificationDropdown">
-                <div class="notification-content">
-                  <button class="btn btn-link" style="color: #6c757d;">
-                    <u>View All</u>
-                  </button>
-                  <button class="btn btn-link float-right" style="color: #6c757d;">
-                    <u>Mark All as Read</u>
-                  </button>
-                  <ul class="list-group list-group-flush notification-view-unread">
-                    <li id="notification-no-unread" class="list-group-item py-5" hidden>
-                      <h3 class="text-center">No Unread Notifications</h3>
-                    </li>
-                    <li id="notification-no-read-and-unread" class="list-group-item py-5" hidden>
-                      <h3 class="text-center">No Notifications</h3>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </li>
-            <li class="nav-item mx-1">
-              <a href="{{ url_for('auth.logout') }}" class="nav-link">
-                <i class="fas fa-user-times"></i>
-                Log Out
-              </a>
-            </li>
-            <li class="nav-item">
-              <img src="{{ current_user.avatar() }}" class="avatar" alt="Avatar" />
-            </li>
-          </ul>
-        </div>
+      <a class="navbar-brand" href="{{ url_for('index') }}"
+        style="font-family: 'Satisfy', cursive; font-size: 2rem;">Issueless</a>
+      <div class="d-flex align-items-center">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse"
+          aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
       </div>
-    </div>
-
-    <div class="breadcrumb-bar navbar bg-white sticky-top">
-      <div class="container px-0">
-        {{ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', url_for('project.project', id=project.id)), ('Issue', None)]) }}
-        <div class="dropdown">
-          <button class="btn btn-round" role="button" data-toggle="dropdown" aria-expanded="false">
-            <i class="material-icons">settings</i>
-          </button>
-          <div class="dropdown-menu dropdown-menu-right">
-            {% if role == 'Admin' or role == 'Reviewer' %}
-            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#issue-edit-modal">Edit Issue</a>
-            <div class="dropdown-divider"></div>
-            <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
-              <button type="submit" class="dropdown-item btn-link text-danger">
-                Delete Issue
-              </button>
-            </form>
-            {% endif %}
-          </div>
-        </div>
+      <div class="collapse navbar-collapse justify-content-between" id="navbar-collapse">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
+              aria-expanded="false">
+              <i class="material-icons">notifications</i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right notification-dropdown p-0"
+              aria-labelledby="notificationDropdown">
+              <div class="notification-content">
+                <button class="btn btn-link" style="color: #6c757d;">
+                  <u>View All</u>
+                </button>
+                <button class="btn btn-link float-right" style="color: #6c757d;">
+                  <u>Mark All as Read</u>
+                </button>
+                <ul class="list-group list-group-flush notification-view-unread">
+                  <li id="notification-no-unread" class="list-group-item py-5" hidden>
+                    <h3 class="text-center">No Unread Notifications</h3>
+                  </li>
+                  <li id="notification-no-read-and-unread" class="list-group-item py-5" hidden>
+                    <h3 class="text-center">No Notifications</h3>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+          <li class="nav-item mx-4">
+            <a href="{{ url_for('auth.logout') }}" class="nav-link">
+              <i class="fas fa-user-times"></i>
+              Log Out
+            </a>
+          </li>
+          <li class="nav-item">
+            <img src="{{ current_user.avatar() }}" class="avatar" alt="Avatar" />
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -215,13 +191,16 @@
                             </button>
                             <div class="dropdown-menu dropdown-menu-right">
                               <a class="dropdown-item"
-                                href="{{ url_for('issue.download', id=project.id, issue_id=issue.id, filename=file.filename) }}">Download</a>
+                                href="{{ url_for('issue.download', id=project.id, issue_id=issue.id, filename=file.filename) }}">Download
+                              </a>
+                              {% if role == 'Admin' or role == 'Reviewer' or file.uploader == current_user %}
                               <div class="dropdown-divider"></div>
                               <form class="file-delete-form"
                                 action="{{ url_for('issue.delete_file', id=project.id, issue_id=issue.id, filename=file.filename) }}"
                                 method="POST">
                                 <button type="submit" class="dropdown-item text-danger" data-dz-remove>Delete</button>
                               </form>
+                              {% endif %}
                             </div>
                           </div>
                         </div>
@@ -235,8 +214,114 @@
           </div>
         </div>
       </div>
+      <div class="content-container">
+        <div class="breadcrumb-bar navbar bg-white sticky-top">
+          {{ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', url_for('project.project', id=project.id)), ('Issue', None)]) }}
+          {% if role == 'Admin' or role == 'Reviewer' %}
+          <div class="dropdown">
+            <button class="btn btn-round" role="button" data-toggle="dropdown" aria-expanded="false">
+              <i class="material-icons">settings</i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+              <a class="dropdown-item" href="#" data-toggle="modal" data-target="#issue-edit-modal">Edit Issue</a>
+              <div class="dropdown-divider"></div>
+              <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
+                <button type="submit" class="dropdown-item btn-link text-danger">
+                  Delete Issue
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="comment-module" data-filter-list="comment-module-body">
+          <div class="comment-module-top">
+            <form>
+              <div class="input-group input-group-round">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">
+                    <i class="material-icons">search</i>
+                  </span>
+                </div>
+                <input type="search" class="form-control filter-list-input" placeholder="Search comment"
+                  aria-label="Search Comment">
+              </div>
+            </form>
+            <div class="comment-module-body">
+              {% for comment in comments %}
+              <div class="media comment-item">
+                <img alt="{{ comment.user.first_name }}" src="{{ comment.user.avatar() }}" class="avatar" />
+                <div class="media-body">
+                  <div class="comment-item-title">
+                    <span class="comment-item-author" data-filter-by="text">{{ comment.user.first_name }}</span>
+
+                    {% if role == 'Admin' or role == 'Reviewer' or comment.user == current_user %}
+                    <span class="comment-timestamp ml-auto" data-filter-by="text"
+                      data-timestamp="{{ comment.timestamp }}"></span>
+                    <form class="ml-3"
+                      action="{{ url_for('issue.delete_comment', id=project.id, issue_id=issue.id, comment_id=comment.id) }}"
+                      method="post">
+                      <button class="btn p-0">
+                        <i class="material-icons" style="font-size: 1.2rem;">delete</i>
+                      </button>
+                    </form>
+                    {% else %}
+                    <span class="comment-timestamp ml-auto" data-filter-by="text"
+                      data-timestamp="{{ comment.timestamp }}" style="margin-right: 45.203px;"></span>
+                    {% endif %}
+                  </div>
+                  <div class="comment-item-body" data-filter-by="text">
+                    <p>{{ comment.text }}</p>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% if role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee %}
+          <div class="comment-module-bottom">
+            <form class="comment-form form-inline"
+              action="{{ url_for('issue.comment', id=project.id, issue_id=issue.id) }}" method="POST">
+              <textarea class="form-control" style="width: calc(100% - 100px);" placeholder="Type comment" rows="1"
+                maxlength="10000" name="text"></textarea>
+              <button type="submit" class="btn btn-primary ml-auto" disabled>Submit</button>
+            </form>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </div>
+
+  <form class="modal fade" id="issue-edit-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Issue</h5>
+          <button type="button" class="close btn btn-round" data-dismiss="modal" aria-label="Close">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <h6>Issue Details</h6>
+          <div class="form-group row align-items-center">
+            <label class="col-3">Title</label>
+            <input class="form-control col" type="text" placeholder="Issue title" maxlength="80" />
+          </div>
+          <div class="form-group row">
+            <label class="col-3">Description</label>
+            <textarea class="form-control col" maxlength="200" rows="3" placeholder="Issue description"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button role="button" class="btn btn-primary" type="submit" disabled>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 
 
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
@@ -262,9 +347,23 @@
   <script src="{{ url_for('static', filename='js/base/base.js') }}"></script>
   <script src="{{ url_for('static', filename='js/base/notifications.js') }}"></script>
 
+  <script src="{{ url_for('static', filename='js/issue/issue.js') }}"></script>
   {% if role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee %}
   <script src="{{ url_for('static', filename='js/issue/dropzone.js') }}"></script>
   <script src="{{ url_for('static', filename='js/issue/delete_file.js') }}"></script>
+  <script>
+    document.querySelector('.comment-form').addEventListener('input', function () {
+      const submitBtn = this.querySelector('button');
+      if (this.querySelector('textarea').value.length === 0) {
+        submitBtn.disabled = true;
+      } else {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+  {% endif %}
+  {% if role == 'Admin' or role == 'Reviewer' %}
+  <script src="{{ url_for('static', filename='js/issue/edit_issue.js') }}"></script>
   {% endif %}
 </body>
 

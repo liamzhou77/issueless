@@ -239,13 +239,6 @@ def test_invalid_assign(client, auth):
         == 404
     )
 
-    resp = client.post(
-        '/projects/1/issues/2/assign',
-        data={'priority': 'High', 'assignee_id': 3},
-        follow_redirects=True,
-    )
-    assert b'The issue has already been assigned to Ryan Cooper.' in resp.data
-
 
 def test_valid_assign(client, auth):
     auth.login(2)
@@ -260,17 +253,7 @@ def test_valid_assign(client, auth):
     assert issue.assignee_id == 3
 
 
-def test_invalid_close(client, auth):
-    auth.login(1)
-
-    resp = client.post('/projects/1/issues/3/close', follow_redirects=True,)
-    assert b'The issue has already been resolved.' in resp.data
-
-    resp = client.post('/projects/1/issues/4/close', follow_redirects=True,)
-    assert b'The issue has already been marked as closed.' in resp.data
-
-
-def test_valid_close(client, auth):
+def test_close(client, auth):
     auth.login(1)
 
     issue = Issue.query.get(1)
