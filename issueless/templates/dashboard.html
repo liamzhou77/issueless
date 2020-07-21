@@ -25,9 +25,6 @@
     <a class="nav-link" data-toggle="tab" href="#issues" role="tab" aria-controls="issues"
       aria-selected="false">Issues</a>
   </li>
-  <li class="nav-item">
-    <a class="nav-link" data-toggle="tab" href="#Lorem" role="tab" aria-controls="Lorem" aria-selected="false">Lorem</a>
-  </li>
 </ul>
 
 <div class="tab-content">
@@ -138,6 +135,98 @@
           </div>
         </div>
         {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="issues" role="tabpanel">
+    <div class="row content-list-head">
+      <div class="col-auto">
+        <h3>Issues</h3>
+      </div>
+    </div>
+
+    <div class="content-list-body">
+      <div class="card-list" data-filter-list="card-assigned-list-body">
+        <div class="card-list-head pb-2">
+          <h5 class="my-auto">Assigned to me</h5>
+          <form class="ml-auto mr-3">
+            <div class="input-group input-group-round">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="material-icons">filter_list</i>
+                </span>
+              </div>
+              <input type="text" class="form-control filter-list-input" placeholder="Filter issues"
+                aria-label="Filter Issues" />
+            </div>
+          </form>
+        </div>
+        <div class="card-assigned-list-body">
+          {% for issue in assigned_issues %}
+          <div class="card card-issue">
+            <div class="card-body">
+              <div class="card-title text-truncate">
+                <a href="{{ url_for('issue.issue', id=issue.project.id, issue_id=issue.id) }}">
+                  <h6 class="text-truncate" data-filter-by="text">
+                    {{ issue.title }}
+                  </h6>
+                </a>
+                <span class="text-small" data-filter-by="text">
+                  {{ issue.project.title }}
+                </span>
+              </div>
+              <div class="card-meta mr-3">
+                <span>
+                  Priority: <strong data-filter-by="text">{{ issue.priority }}
+                    {% if issue.priority == 'High' %}&#x1F525;{% endif %}</strong>
+                </span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card-list" data-filter-list="card-review-list-body">
+        <div class="card-list-head pb-2">
+          <h5 class="my-auto">Waiting for Review</h5>
+          <form class="ml-auto mr-3">
+            <div class="input-group input-group-round">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="material-icons">filter_list</i>
+                </span>
+              </div>
+              <input type="text" class="form-control filter-list-input" placeholder="Filter issues"
+                aria-label="Filter Issues" />
+            </div>
+          </form>
+        </div>
+        <div class="card-review-list-body">
+          {% for issue in missing_review_issues %}
+          <div class="card card-issue">
+            <div class="card-body">
+              <div class="card-title text-truncate">
+                <a href="{{ url_for('issue.issue', id=issue.project.id, issue_id=issue.id) }}">
+                  <h6 class="text-truncate" data-filter-by="text">
+                    {{ issue.title }}
+                  </h6>
+                </a>
+                <span class="text-small" data-filter-by="text">
+                  {{ issue.project.title }}
+                </span>
+              </div>
+              <div class="card-meta mr-3">
+                <span>
+                  Priority: <strong data-filter-by="text">{{ issue.priority }}
+                    {% if issue.priority == 'High' %}&#x1F525;{% endif %}</strong>
+                </span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
       </div>
     </div>
   </div>

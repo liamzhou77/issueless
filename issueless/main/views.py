@@ -3,7 +3,15 @@ from flask_login import current_user, login_required
 
 from issueless.errors.errors import ValidationError
 from issueless.main import bp
-from issueless.models import db, Notification, UserProject
+from issueless.models import (
+    db,
+    Comment,
+    Issue,
+    Notification,
+    Project,
+    Role,
+    UserProject,
+)
 from issueless.main.helpers import get_notification
 
 
@@ -25,6 +33,35 @@ def dashboard():
         project_users=[
             user_project.project.user_projects.order_by(UserProject.timestamp)
             for user_project in user_projects
+        ],
+        assigned_issues=current_user.assigned_issues.filter_by(
+            status='In Progress', priority='High'
+        )
+        .order_by(Issue.timestamp)
+        .union_all(
+            current_user.assigned_issues.filter_by(
+                status='In Progress', priority='Medium'
+            ).order_by(Issue.timestamp)
+        )
+        .union_all(
+            current_user.assigned_issues.filter_by(
+                status='In Progress', priority='Low'
+            ).order_by(Issue.timestamp)
+        ),
+        missing_review_issues=[
+            issue
+            for issue in Issue.query.filter(
+                Issue.status == 'In Progress', Issue.assignee != current_user
+            )
+            .join(Issue.project)
+            .join(Project.user_projects)
+            .filter(UserProject.user == current_user)
+            .filter(
+                (UserProject.role == Role.query.filter_by(name='Admin').first())
+                | (UserProject.role == Role.query.filter_by(name='Reviewer').first())
+            )
+            if issue.comments.order_by(Comment.timestamp.desc()).limit(1).first().user
+            == issue.assignee
         ],
     )
 
