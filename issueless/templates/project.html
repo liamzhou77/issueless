@@ -79,15 +79,18 @@
     </button>
     {% endif %}
   </div>
+  {% set resolved_issues_count = resolved_issues.count() %}
+  {% set total_issues_count = open_issues.count() + in_progress_issues.count() + resolved_issues.count() %}
   <div class="progress">
-    <div class="progress-bar bg-success" style="width: 25%;"></div>
+    <div class="progress-bar bg-success"
+      style="width: {% if total_issues_count == 0 %}0{% else %}{{ resolved_issues_count / total_issues_count * 100 }}{% endif %}%;">
+    </div>
   </div>
   <div class="d-flex justify-content-between text-small">
     <div class="d-flex align-items-center">
       <i class="material-icons">playlist_add_check</i>
-      <span>3/12</span>
+      <span>{{ resolved_issues_count }}/{{ total_issues_count }}</span>
     </div>
-    <span>Due 9 days</span>
   </div>
 </div>
 
@@ -179,7 +182,9 @@
                     </a>
                     <div class="dropdown-divider"></div>
                     {% if role == 'Admin' or role == 'Reviewer' %}
-                    <form action="{{ url_for('issue.close', id=project.id, issue_id=issue.id) }}" method="POST">
+                    <form class="issue-close-form"
+                      action="{{ url_for('issue.close', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <input type="hidden" name="url" value="{{ url_for('project.project', id=project.id) }}">
                       <button type="submit" class="dropdown-item btn-link text-danger">Mark as Closed</button>
                     </form>
                     {% endif %}
@@ -260,6 +265,14 @@
                     <i class="material-icons">more_vert</i>
                   </button>
                   <div class="dropdown-menu dropdown-menu-right">
+                    {% if issue.assignee != current_user %}
+                    <form action="{{ url_for('issue.resolve', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <input type="hidden" name="url" value="{{ url_for('project.project', id=project.id) }}">
+                      <button type="submit" class="dropdown-item btn-link">
+                        Mark as Resolved
+                      </button>
+                    </form>
+                    {% endif %}
                     <a class="dropdown-item issue-in-progress-edit-link" href="#" data-toggle="modal"
                       data-target="#issue-edit-modal"
                       data-action="{{ url_for('issue.edit', id=project.id, issue_id=issue.id) }}"
@@ -268,7 +281,9 @@
                       Edit
                     </a>
                     <div class="dropdown-divider"></div>
-                    <form action="{{ url_for('issue.close', id=project.id, issue_id=issue.id) }}" method="POST">
+                    <form class="issue-close-form"
+                      action="{{ url_for('issue.close', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <input type="hidden" name="url" value="{{ url_for('project.project', id=project.id) }}">
                       <button type="submit" class="dropdown-item btn-link text-danger">Mark as Closed</button>
                     </form>
                     <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
@@ -304,6 +319,53 @@
         </div>
         <div class="card-resolved-list-body collapse issue-list-collapse" id="issue-resolved-list-collapse">
           {% for issue in resolved_issues %}
+          {% set assignee = issue.assignee %}
+          <div class="card card-issue">
+            <div class="card-body">
+              <div class="card-title text-truncate">
+                <a href="{{ url_for('issue.issue', id=project.id, issue_id=issue.id) }}">
+                  <h6 class="text-truncate" data-filter-by="text">
+                    {{ issue.title }}
+                  </h6>
+                </a>
+                <span class="text-small">
+                  Resolved: <span class="issue-timestamp" data-timestamp="{{ issue.resolved_timestamp }}"></span>
+                </span>
+              </div>
+              <div class="card-meta">
+                {% if role == 'Admin' or role == 'Reviewer' %}
+                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}" style="margin-right: 17px;">
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar">
+                </span>
+                {% else %}
+                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}" style="margin-right: 70px;">
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar">
+                </span>
+                {% endif %}
+
+                {% if role == 'Admin' or role == 'Reviewer' %}
+                <div class="dropdown card-options">
+                  <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="material-icons">more_vert</i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    <form action="{{ url_for('issue.restore', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <input type="hidden" name="url" value="{{ url_for('project.project', id=project.id) }}">
+                      <button type="submit" class="dropdown-item btn-link">
+                        Mark as In Progress
+                      </button>
+                    </form>
+                    <div class="dropdown-divider"></div>
+                    <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <button type="submit" class="dropdown-item btn-link text-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
           {% endfor %}
         </div>
       </div>
@@ -328,9 +390,93 @@
         </div>
         <div class="card-closed-list-body collapse issue-list-collapse" id="issue-closed-list-collapse">
           {% for issue in closed_issues %}
-          {% if issue.priority is not none %}
-          {% else %}
+          {% if issue.assignee is none %}
+          {% set index = open_issues.count() + loop.index %}
           {% endif %}
+          <div class="card card-issue">
+            <div class="card-body">
+              <div class="card-title text-truncate">
+                <h6 class="text-truncate" data-filter-by="text">
+                  {{ issue.title }}
+                </h6>
+                <span class="text-small">
+                  Closed: <span class="issue-timestamp" data-timestamp="{{ issue.closed_timestamp }}"></span>
+                </span>
+              </div>
+              <div class="card-meta">
+                {% if issue.assignee is none %}
+                <a href="#issue-open-description-collapse-{{ index }}" data-toggle="collapse">
+                  {% if role == 'Admin' or role == 'Reviewer' %}
+                  <i class="material-icons mr-3" data-toggle="tooltip" data-placement="top" title="Show Description">
+                    expand_more
+                  </i>
+                  {% else %}
+                  <i class="material-icons" data-toggle="tooltip" data-placement="top" title="Show Description"
+                    style="margin-right: 76px;">
+                    expand_more
+                  </i>
+                  {% endif %}
+                </a>
+                {% if role == 'Admin' or role == 'Reviewer' %}
+                <div class="dropdown card-options">
+                  <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="material-icons">more_vert</i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    <form action="{{ url_for('issue.restore', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <input type="hidden" name="url" value="{{ url_for('project.project', id=project.id) }}">
+                      <button type="submit" class="dropdown-item btn-link">
+                        Restore
+                      </button>
+                    </form>
+                    <div class="dropdown-divider"></div>
+                    <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <button type="submit" class="dropdown-item btn-link text-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+                {% endif %}
+                {% else %}
+                {% set assignee = issue.assignee %}
+                {% if role == 'Admin' or role == 'Reviewer' %}
+                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}" style="margin-right: 17px;">
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar">
+                </span>
+                <div class="dropdown card-options">
+                  <button class="btn-options" type="button" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="material-icons">more_vert</i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    <form action="{{ url_for('issue.restore', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <input type="hidden" name="url" value="{{ url_for('project.project', id=project.id) }}">
+                      <button type="submit" class="dropdown-item btn-link">
+                        Restore
+                      </button>
+                    </form>
+                    <div class="dropdown-divider"></div>
+                    <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
+                      <button type="submit" class="dropdown-item btn-link text-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+                {% else %}
+                <span data-toggle="tooltip" title="Assigned to {{ assignee.first_name }}" style="margin-right: 70px;">
+                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" class="avatar">
+                </span>
+                {% endif %}
+                {% endif %}
+              </div>
+            </div>
+            {% if issue.assignee is none %}
+            <div class="collapse issue-description-collapse" id="issue-open-description-collapse-{{ index }}">
+              <div class="card card-body">
+                {{ issue.description }}
+              </div>
+            </div>
+            {% endif %}
+          </div>
           {% endfor %}
         </div>
       </div>

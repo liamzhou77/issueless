@@ -1,8 +1,15 @@
 .notification-dropdown {
   top: 50px;
-  width: 550px;
+  width: 700px;
   max-height: 400px;
   overflow-y: auto;
+  right: -203px !important;
+}
+
+@media (max-width: 700px) {
+  .notification-dropdown {
+    width: 100vw;
+  }
 }
 
 .notification-content {
@@ -19,6 +26,10 @@
   border-radius: 50%;
   width: 12px;
   height: 12px;
+}
+
+.dropdown-toggle::after {
+  display: none;
 }
 
 .notification-content img {
@@ -39,4 +50,9 @@
 
 .notification-view-unread .notification-read {
   display: none;
+}
+
+.notification-redirect-icon {
+  cursor: pointer;
+  font-size: 30px;
 }

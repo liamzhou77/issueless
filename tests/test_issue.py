@@ -73,14 +73,13 @@ def test_invalid_edit(client, auth):
 
     assert client.post('/projects/1/issues/1/edit', json={}).status_code == 400
 
-    resp = client.post(
-        '/projects/1/issues/3/edit',
-        json={'title': 'test_title', 'description': 'test_description'},
+    assert (
+        client.post(
+            '/projects/1/issues/3/edit',
+            json={'title': 'test_title', 'description': 'test_description'},
+        ).status_code
+        == 400
     )
-    assert resp.status_code == 422
-    data = json.loads(resp.data)
-    assert not data['success']
-    assert data['error'] == 'You can only edit an open or in progress issue.'
 
     resp = client.post(
         '/projects/1/issues/1/edit',
@@ -258,6 +257,8 @@ def test_close(client, auth):
 
     issue = Issue.query.get(1)
     assert issue.status == 'Open'
-    resp = client.post('/projects/1/issues/1/close')
+    resp = client.post(
+        '/projects/1/issues/1/close', data={'url': 'http://localhost/projects/1'}
+    )
     assert 'http://localhost/projects/1' == resp.headers['Location']
     assert issue.status == 'Closed'

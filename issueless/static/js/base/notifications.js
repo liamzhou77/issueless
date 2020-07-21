@@ -10,8 +10,17 @@ function noNotification() {
   const noNotifications = document.getElementById(
     'notification-no-read-and-unread'
   );
+
+  const notificationIcon = document.getElementById('notification-icon');
+  const unreadNotification = document.querySelector('.notification-unread');
+  if (!unreadNotification) {
+    notificationIcon.textContent = 'notifications';
+  } else {
+    notificationIcon.textContent = 'notifications_active';
+  }
+
   if (notificationList.classList.contains('notification-view-unread')) {
-    if (!document.querySelector('.notification-unread')) {
+    if (!unreadNotification) {
       noUnreadNotifications.hidden = false;
       noNotifications.hidden = true;
     } else {
@@ -19,7 +28,7 @@ function noNotification() {
       noNotifications.hidden = true;
     }
   } else if (
-    !document.querySelector('.notification-unread') &&
+    !unreadNotification &&
     !document.querySelector('.notification-read')
   ) {
     noUnreadNotifications.hidden = true;
@@ -103,19 +112,35 @@ function generateNotifications() {
 
         let messageHTML;
         if (name === 'invitation') {
-          const { projectTitle, roleName } = data;
-          messageHTML = `invited you to be a <strong>${roleName}</strong> in <strong>${projectTitle}</strong>.`;
-        } else {
-          const { projectTitle } = data;
-          if (name === 'join project') {
-            messageHTML = `joined your project <strong>${projectTitle}</strong>.`;
-          } else if (name === 'project deleted') {
-            messageHTML = `deleted <strong>${projectTitle}</strong>.`;
-          } else if (name === 'quit project') {
-            messageHTML = `left your project <strong>${projectTitle}</strong>.`;
-          } else if (name === 'user removed') {
-            messageHTML = `removed you from <strong>${projectTitle}</strong>.`;
-          }
+          messageHTML = `invited you to be a <strong>${data.roleName}</strong> in <strong>${data.projectTitle}</strong>.`;
+        } else if (name === 'join project') {
+          messageHTML = `joined your project <strong>${data.projectTitle}</strong>.`;
+        } else if (name === 'delete project') {
+          messageHTML = `deleted <strong>${data.projectTitle}</strong>.`;
+        } else if (name === 'quit project') {
+          messageHTML = `left <strong>${data.projectTitle}</strong>.`;
+        } else if (name === 'remove user') {
+          messageHTML = `removed you from <strong>${data.projectTitle}</strong>.`;
+        } else if (name === 'change role') {
+          messageHTML = `changed your role in <strong>${data.projectTitle}</strong> to <strong>${data.newRole}</strong>.`;
+        } else if (name === 'new issue') {
+          messageHTML = `created a new issue <strong>${data.issueTitle}</strong> in <strong>${data.projectTitle}</strong>.`;
+        } else if (name === 'delete issue') {
+          messageHTML = `deleted the issue <strong>${data.issueTitle}</strong> in <strong>${data.projectTitle}</strong>.`;
+        } else if (name === 'assign issue') {
+          messageHTML = `assigned you a new issue.`;
+        } else if (name === 'remove assignee') {
+          messageHTML = `assigned the issue <strong>${data.issueTitle}</strong> to another member.`;
+        } else if (name === 'mark open') {
+          messageHTML = `marked the closed issue <strong>${data.issueTitle}</strong> as Open.`;
+        } else if (name === 'mark in progress') {
+          messageHTML = `marked the ${data.preStatus} issue <strong>${data.issueTitle}</strong> as In Progress.`;
+        } else if (name === 'mark resolved') {
+          messageHTML = `marked the issue <strong>${data.issueTitle}</strong> as Resolved.`;
+        } else if (name === 'mark closed') {
+          messageHTML = `marked the issue <strong>${data.issueTitle}</strong> as Closed.`;
+        } else if (name === 'new comment') {
+          messageHTML = `submitted a new comment.`;
         }
 
         const mediaBody = createMediaBody(fullname, messageHTML, timestamp);
@@ -123,7 +148,7 @@ function generateNotifications() {
 
         if (name === 'invitation') {
           const btnDiv = document.createElement('div');
-          btnDiv.className = 'd-flex flex-column mr-3';
+          btnDiv.className = 'd-flex flex-sm-column mr-3';
           const acceptBtn = document.createElement('button');
           acceptBtn.className = 'btn btn-outline-secondary btn-sm';
           acceptBtn.textContent = 'Accept';
@@ -163,6 +188,19 @@ function generateNotifications() {
           btnDiv.appendChild(deleteBtn);
 
           media.appendChild(btnDiv);
+        } else if (
+          name === 'assign issue' ||
+          name === 'mark in progress' ||
+          name === 'new comment'
+        ) {
+          const redirectIcon = document.createElement('i');
+          redirectIcon.className =
+            'material-icons mx-2 notification-redirect-icon';
+          redirectIcon.textContent = 'navigate_next';
+          redirectIcon.addEventListener('click', function () {
+            window.location.href = `/projects/${data.projectId}/issues/${targetId}`;
+          });
+          media.appendChild(redirectIcon);
         }
 
         if (!isRead) {

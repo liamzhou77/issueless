@@ -38,3 +38,8 @@ document.querySelectorAll('.issue-description-collapse').forEach((elem) => {
 document
   .getElementById('issue-add-modal')
   .addEventListener('input', emptyFormInput);
+
+document.querySelectorAll('.issue-timestamp').forEach((elem) => {
+  const { timestamp } = elem.dataset;
+  elem.textContent = moment(timestamp * 1000).fromNow();
+});

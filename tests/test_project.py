@@ -167,10 +167,10 @@ def test_delete(client, auth):
     assert Project.query.get(1) is None
 
     assert (
-        Notification.query.filter_by(name='project deleted', user_id=1).first() is None
+        Notification.query.filter_by(name='delete project', user_id=1).first() is None
     )
     assert (
-        Notification.query.filter_by(name='project deleted', user_id=2).first()
+        Notification.query.filter_by(name='delete project', user_id=2).first()
         is not None
     )
 
@@ -417,7 +417,7 @@ def test_valid_remove_member(client, auth):
     assert data['success']
     assert UserProject.query.filter_by(user_id=2, project_id=1).first() is None
     assert (
-        Notification.query.filter_by(name='user removed', user_id=2).first() is not None
+        Notification.query.filter_by(name='remove user', user_id=2).first() is not None
     )
 
 

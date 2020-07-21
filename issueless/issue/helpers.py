@@ -1,3 +1,5 @@
+from flask_login import current_user
+
 from issueless.errors.errors import ValidationError
 from issueless.models import User
 
@@ -34,6 +36,7 @@ def edit_validation(
             and assignee == issue.assignee
         ):
             raise ValidationError('No changes have been made.')
+        return assignee
 
 
 def _title_description_validation(title, description):
@@ -77,3 +80,10 @@ def comment_validation(text):
     if len(text) > 10000:
         error = "Comment can not be more than 10000 characters."
     return error
+
+
+def admin_reviewer_add_notification(project, name, data, target_id=None):
+    admin_reviewers = project.get_admin_reviewers()
+    for user in admin_reviewers:
+        if user != current_user:
+            user.add_notification(name, data, target_id)

@@ -18,6 +18,7 @@ from issueless.project.helpers import (
 @login_required
 @permission_required(Permission.READ_PROJECT)
 def project(user_project):
+    """Renders the project page."""
     project = user_project.project
     return render_template(
         'project.html',
@@ -40,10 +41,10 @@ def project(user_project):
             )
         ),
         resolved_issues=project.issues.filter_by(status='Resolved').order_by(
-            Issue.timestamp
+            Issue.resolved_timestamp
         ),
         closed_issues=project.issues.filter_by(status='Closed').order_by(
-            Issue.timestamp
+            Issue.closed_timestamp
         ),
     )
 
@@ -165,7 +166,7 @@ def delete(user_project):
     project = user_project.project
     for user in project.users:
         if user != current_user:
-            user.add_basic_notification('project deleted', project.title)
+            user.add_basic_notification('delete project', project.title)
 
     db.session.delete(project)
     db.session.commit()
@@ -409,7 +410,7 @@ def remove_member(user_project):
     user_project = remove_member_validation(project, user)
 
     db.session.delete(user_project)
-    user.add_basic_notification('user removed', project.title)
+    user.add_basic_notification('remove user', project.title)
     db.session.commit()
 
     return {'success': True}
@@ -422,7 +423,7 @@ def change_role(user_project):
     """Changes a member's role.
 
     Changes a member's role. If member's previous role is Reviewer, demote to Developer.
-    Otherwise, promote to Reviewer.
+    Otherwise, promote to Reviewer. Notifies the member.
 
     Produces:
         application/json
@@ -458,7 +459,16 @@ def change_role(user_project):
     user = User.query.get_or_404(user_id)
     user_project = change_role_validation(project, user)
 
-    user_project.change_role()
+    new_role = user_project.change_role()
+    user.add_notification(
+        'change role',
+        {
+            'avatar': current_user.avatar(),
+            'fullname': current_user.fullname(),
+            'projectTitle': project.title,
+            'newRole': new_role.name,
+        },
+    )
     db.session.commit()
 
     return {'success': True}

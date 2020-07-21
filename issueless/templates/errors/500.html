@@ -1,39 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>500 Internal Server Error</title>
-    <link
-      rel="stylesheet"
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/theme.css') }}"
-      media="all"
-    />
-  </head>
-  <body>
-    <div class="main-container fullscreen">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-xl-5 col-lg-6 col-md-7">
-            <div class="text-center">
-              <h1 class="display-1 text-primary">
-                5&#x1f635;&#x1f635;
-              </h1>
-              <p>
-                An unexpected error has occurred.The administrator has been
-                notified.
-                <a href="{{ url_for('index') }}">Click here to go home</a>
-              </p>
-            </div>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>500 Internal Server Error</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}" media="all" />
+</head>
+
+<body>
+  <div class="main-container fullscreen">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-xl-5 col-lg-6 col-md-7">
+          <div class="text-center">
+            <h1 class="display-1 text-primary">
+              5&#x1f635;&#x1f635;
+            </h1>
+            <p>
+              An unexpected error has occurred. <a href="{{ url_for('index') }}">Click here to go home</a>
+            </p>
           </div>
         </div>
       </div>
     </div>
-  </body>
+  </div>
+</body>
+
 </html>

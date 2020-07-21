@@ -3,6 +3,7 @@ import os
 
 from flask import Flask
 from flask_migrate import Migrate
+from pyngrok import ngrok
 
 from issueless import auth
 from issueless import errors
@@ -27,6 +28,7 @@ def create_app(test_config=None):
         REMEMBER_COOKIE_DURATION=timedelta(days=3, hours=1),
         MAX_CONTENT_LENGTH=5 * 1024 * 1024,
         UPLOAD_PATH='uploads',
+        START_NGROK=os.environ.get('START_NGROK') is not None,
     )
     app.config.from_pyfile('config.py', silent=True)
     if test_config is not None:
@@ -75,5 +77,12 @@ def create_app(test_config=None):
             'File': File,
             'Comment': Comment,
         }
+
+    def start_ngrok():
+        url = ngrok.connect(5000)
+        print(' * Tunnel URL:', url)
+
+    if app.config['START_NGROK']:
+        start_ngrok()
 
     return app

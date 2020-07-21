@@ -38,7 +38,7 @@
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
               aria-expanded="false">
-              <i class="material-icons">notifications</i>
+              <i id="notification-icon" class="material-icons">notifications</i>
             </a>
             <div class="dropdown-menu dropdown-menu-right notification-dropdown p-0"
               aria-labelledby="notificationDropdown">
@@ -85,23 +85,24 @@
             <div class="comment-team-sidebar text-small">
               <div class="comment-team-sidebar-top p-0 mt-3 mx-3">
                 <div class="media align-items-center border-bottom pb-2">
-                  <img src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}" data-toggle="tooltip"
-                    data-placement="left" title="Assigned to {{ assignee.fullname() }}" class="avatar avatar-lg mr-2">
+                  <img id="issue-assignee" src="{{ assignee.avatar() }}" alt="{{ assignee.fullname() }}"
+                    data-toggle="tooltip" data-placement="left" title="Assigned to {{ assignee.fullname() }}"
+                    class="avatar avatar-lg mr-2">
                   <div class="media-body">
-                    <h5 class="mb-1">{{ issue.title }}</h5>
-                    <p>{{ issue.description }}</p>
+                    <h5 id="issue-title" class="mb-1">{{ issue.title }}</h5>
+                    <p id="issue-description">{{ issue.description }}</p>
                   </div>
                 </div>
                 <div class=" mt-2 text-truncate p-2">
                   <div class="row mb-2">
                     <div class="col-sm-6">
-                      <h6 class="d-inline">Status:</h6> {{ issue.status }}
+                      <h6 class="d-inline">Status:</h6> <span id="issue-status">{{ issue.status }}</span>
                     </div>
                     <div class="col-sm-6">
-                      <h6 class="d-inline">Priority:</h6> {{ issue.priority }}
-                      {% if issue.priority == 'High' %}
-                      &#x1F525;
-                      {% endif %}
+                      <h6 class="d-inline">Priority:</h6> <span id="issue-priority">{{ issue.priority }}
+                        {% if issue.priority == 'High' %}
+                        &#x1F525;
+                        {% endif %}</span>
                     </div>
                   </div>
                   <h6 class="d-inline">Creator:</h6> <img src="{{ creator.avatar() }}" alt="{{ creator.fullname() }}"
@@ -110,7 +111,7 @@
               </div>
               <div class="comment-team-sidebar-bottom">
                 <div id="file-search">
-                  {% if role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee %}
+                  {% if issue.status == 'In Progress' and (role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee) %}
                   <ul class="d-none dz-template">
                     <li class="list-group-item dz-preview dz-file-preview" data-project-id="{{ project.id }}"
                       data-issue-id="{{ issue.id }}">
@@ -162,7 +163,7 @@
                     <span class="dz-message mt-2">Drop files here or click here to upload</span>
                   </form>
                   {% endif %}
-                  <ul class="list-group list-group-activity dropzone-previews flex-column-reverse list-group-flush">
+                  <ul class="list-group list-group-activity dropzone-previews flex-sm-column-reverse list-group-flush">
                     {% for file in files %}
                     <li class="list-group-item">
                       <div class="media align-items-center">
@@ -218,13 +219,37 @@
         <div class="breadcrumb-bar navbar bg-white sticky-top">
           {{ macros.breadcrumb([('Dashboard', url_for('index')), ('Project', url_for('project.project', id=project.id)), ('Issue', None)]) }}
           {% if role == 'Admin' or role == 'Reviewer' %}
-          <div class="dropdown">
+          <div id="issue-dropdown" class="dropdown">
             <button class="btn btn-round" role="button" data-toggle="dropdown" aria-expanded="false">
               <i class="material-icons">settings</i>
             </button>
             <div class="dropdown-menu dropdown-menu-right">
+              {% if issue.status == 'In Progress' %}
+              {% if issue.assignee != current_user %}
+              <form action="{{ url_for('issue.resolve', id=project.id, issue_id=issue.id) }}" method="POST">
+                <input type="hidden" name="url" value="{{ url_for('issue.issue', id=project.id, issue_id=issue.id) }}">
+                <button type="submit" class="dropdown-item btn-link">
+                  Mark as Resolved
+                </button>
+              </form>
+              {% endif %}
               <a class="dropdown-item" href="#" data-toggle="modal" data-target="#issue-edit-modal">Edit Issue</a>
               <div class="dropdown-divider"></div>
+              <form action="{{ url_for('issue.close', id=project.id, issue_id=issue.id) }}" method="POST">
+                <input type="hidden" name="url" value="{{ url_for('issue.issue', id=project.id, issue_id=issue.id) }}">
+                <button type="submit" class="dropdown-item btn-link text-danger">
+                  Mark as Closed
+                </button>
+              </form>
+              {% else %}
+              <form action="{{ url_for('issue.restore', id=project.id, issue_id=issue.id) }}" method="POST">
+                <input type="hidden" name="url" value="{{ url_for('issue.issue', id=project.id, issue_id=issue.id) }}">
+                <button type="submit" class="dropdown-item btn-link">
+                  Mark as In Progress
+                </button>
+              </form>
+              <div class="dropdown-divider"></div>
+              {% endif %}
               <form action="{{ url_for('issue.delete', id=project.id, issue_id=issue.id) }}" method="POST">
                 <button type="submit" class="dropdown-item btn-link text-danger">
                   Delete Issue
@@ -256,8 +281,7 @@
                     <span class="comment-item-author" data-filter-by="text">{{ comment.user.first_name }}</span>
 
                     {% if role == 'Admin' or role == 'Reviewer' or comment.user == current_user %}
-                    <span class="comment-timestamp ml-auto" data-filter-by="text"
-                      data-timestamp="{{ comment.timestamp }}"></span>
+                    <span class="comment-timestamp ml-auto" data-timestamp="{{ comment.timestamp }}"></span>
                     <form class="ml-3"
                       action="{{ url_for('issue.delete_comment', id=project.id, issue_id=issue.id, comment_id=comment.id) }}"
                       method="post">
@@ -266,8 +290,8 @@
                       </button>
                     </form>
                     {% else %}
-                    <span class="comment-timestamp ml-auto" data-filter-by="text"
-                      data-timestamp="{{ comment.timestamp }}" style="margin-right: 45.203px;"></span>
+                    <span class="comment-timestamp ml-auto" data-timestamp="{{ comment.timestamp }}"
+                      style="margin-right: 45.203px;"></span>
                     {% endif %}
                   </div>
                   <div class="comment-item-body" data-filter-by="text">
@@ -278,14 +302,13 @@
               {% endfor %}
             </div>
           </div>
-          {% if role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee %}
+          {% if issue.status == 'In Progress' and (role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee) %}
           <div class="comment-module-bottom">
             <form class="comment-form form-inline"
               action="{{ url_for('issue.comment', id=project.id, issue_id=issue.id) }}" method="POST">
               <textarea class="form-control" style="width: calc(100% - 100px);" placeholder="Type comment" rows="1"
                 maxlength="10000" name="text"></textarea>
               <button type="submit" class="btn btn-primary ml-auto" disabled>Submit</button>
-            </form>
             </form>
           </div>
           {% endif %}
@@ -294,7 +317,10 @@
     </div>
   </div>
 
-  <form class="modal fade" id="issue-edit-modal" tabindex="-1" aria-hidden="true">
+  <form class="modal fade" action="{{ url_for('issue.edit', id=project.id, issue_id=issue.id) }}" id="issue-edit-modal"
+    tabindex="-1" aria-hidden="true" data-original-title="{{ issue.title }}"
+    data-original-description="{{ issue.description }}" data-original-priority="{{ issue.priority }}"
+    data-original-assignee-id="{{ issue.assignee.id }}">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -307,11 +333,51 @@
           <h6>Issue Details</h6>
           <div class="form-group row align-items-center">
             <label class="col-3">Title</label>
-            <input class="form-control col" type="text" placeholder="Issue title" maxlength="80" />
+            <input class="form-control col" type="text" placeholder="Issue title" maxlength="80"
+              value="{{ issue.title }}" />
           </div>
           <div class="form-group row">
             <label class="col-3">Description</label>
-            <textarea class="form-control col" maxlength="200" rows="3" placeholder="Issue description"></textarea>
+            <textarea class="form-control col" maxlength="200" rows="3"
+              placeholder="Issue description">{{ issue.description }}</textarea>
+          </div>
+          <hr>
+          <h6>Select the priority level of this issue</h6>
+          <select class="custom-select">
+            <option>Choose a priority level</option>
+            <option value="High" {% if issue.priority == 'High' %}selected{% endif %}>High &#x1F525;</option>
+            <option value="Medium" {% if issue.priority == 'Medium' %}selected{% endif %}>Medium</option>
+            <option value="Low" {% if issue.priority == 'Low' %}selected{% endif %}>Low</option>
+          </select>
+          <hr>
+
+          <h6 class="text-dark">Assign a member to work on this issue</h6>
+          <div class="users-manage pt-3" data-filter-list="form-group-users">
+            <div class="input-group input-group-round">
+              <div class="input-group-prepend">
+                <span class="input-group-text">
+                  <i class="material-icons">filter_list</i>
+                </span>
+              </div>
+              <input type="text" class="form-control filter-list-input" placeholder="Filter members"
+                aria-label="Filter Members" />
+            </div>
+            <div class="form-group-users">
+              {% for member_user_project in member_user_projects %}
+              {% set user = member_user_project.user %}
+              <div class="custom-control custom-radio">
+                <input type="radio" class="custom-control-input" id="edit-user-assign-{{ loop.index }}"
+                  name="user-assign-radio" value="{{ user.id }}" data-src="{{ user.avatar() }}"
+                  data-fullname="{{ user.fullname() }}" {% if user == issue.assignee %}checked{% endif %}>
+                <label class="custom-control-label" for="edit-user-assign-{{ loop.index }}">
+                  <span class="d-flex align-items-center">
+                    <img src="{{ user.avatar() }}" alt="{{ user.fullname() }}" class="avatar mr-2">
+                    <span class="h6 mb-0" data-filter-by="text">{{ user.fullname() }}</span>
+                  </span>
+                </label>
+              </div>
+              {% endfor %}
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -349,8 +415,8 @@
 
   <script src="{{ url_for('static', filename='js/issue/issue.js') }}"></script>
   {% if role == 'Admin' or role == 'Reviewer' or current_user == creator or current_user == assignee %}
+  {% if issue.status == 'In Progress' %}
   <script src="{{ url_for('static', filename='js/issue/dropzone.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/issue/delete_file.js') }}"></script>
   <script>
     document.querySelector('.comment-form').addEventListener('input', function () {
       const submitBtn = this.querySelector('button');
@@ -362,7 +428,9 @@
     });
   </script>
   {% endif %}
-  {% if role == 'Admin' or role == 'Reviewer' %}
+  <script src="{{ url_for('static', filename='js/issue/delete_file.js') }}"></script>
+  {% endif %}
+  {% if issue.status == 'In Progress' and (role == 'Admin' or role == 'Reviewer') %}
   <script src="{{ url_for('static', filename='js/issue/edit_issue.js') }}"></script>
   {% endif %}
 </body>

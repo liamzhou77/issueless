@@ -84,7 +84,30 @@ def access_issue_permission_required(f):
     return wrapper
 
 
-def manage_issue_permission_required(f):
+def edit_issue_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project, issue = _get_issue(id, issue_id)
+
+        if issue.status != 'Open' and issue.status != 'In Progress':
+            abort(400)
+
+        if (
+            issue.status == 'Open'
+            and not user_project.can(Permission.MANAGE_ISSUES)
+            and issue.creator != current_user
+        ) or (
+            issue.status == 'In Progress'
+            and not user_project.can(Permission.MANAGE_ISSUES)
+        ):
+            abort(403)
+
+        return f(user_project.project, issue, *args, **kwargs)
+
+    return wrapper
+
+
+def delete_issue_permission_required(f):
     @wraps(f)
     def wrapper(id, issue_id, *args, **kwargs):
         user_project, issue = _get_issue(id, issue_id)
@@ -122,6 +145,36 @@ def close_issue_permission_required(f):
     def wrapper(id, issue_id, *args, **kwargs):
         user_project, issue = _get_issue(id, issue_id)
         if issue.status != 'Open' and issue.status != 'In Progress':
+            abort(400)
+        if not user_project.can(Permission.MANAGE_ISSUES):
+            abort(403)
+
+        return f(user_project.project, issue, *args, **kwargs)
+
+    return wrapper
+
+
+def resolve_issue_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project, issue = _get_issue(id, issue_id)
+        if issue.status != 'In Progress':
+            abort(400)
+        if issue.assignee == current_user or not user_project.can(
+            Permission.MANAGE_ISSUES
+        ):
+            abort(403)
+
+        return f(user_project.project, issue, *args, **kwargs)
+
+    return wrapper
+
+
+def restore_issue_permission_required(f):
+    @wraps(f)
+    def wrapper(id, issue_id, *args, **kwargs):
+        user_project, issue = _get_issue(id, issue_id)
+        if issue.status != 'Closed' and issue.status != 'Resolved':
             abort(400)
         if not user_project.can(Permission.MANAGE_ISSUES):
             abort(403)

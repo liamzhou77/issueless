@@ -1,5 +1,6 @@
-import shutil
 import os
+import shutil
+from time import time
 
 from flask import (
     abort,
@@ -18,15 +19,19 @@ from issueless.decorators import (
     access_issue_permission_required,
     assign_issue_permission_required,
     close_issue_permission_required,
+    comment_and_upload_permission_required,
     delete_comment_permission_required,
     delete_file_permission_required,
+    delete_issue_permission_required,
     download_file_permission_required,
-    manage_issue_permission_required,
+    edit_issue_permission_required,
     permission_required,
-    comment_and_upload_permission_required,
+    resolve_issue_permission_required,
+    restore_issue_permission_required,
 )
 from issueless.issue import bp
 from issueless.issue.helpers import (
+    admin_reviewer_add_notification,
     assign_validation,
     comment_validation,
     create_validation,
@@ -96,6 +101,16 @@ def create(user_project):
             title=title, description=description, creator=current_user, project=project,
         )
         db.session.add(new_issue)
+        admin_reviewer_add_notification(
+            project,
+            'new issue',
+            {
+                'avatar': current_user.avatar(),
+                'fullname': current_user.fullname(),
+                'projectTitle': project.title,
+                'issueTitle': title,
+            },
+        )
         db.session.commit()
         os.makedirs(os.path.join(current_app.config['UPLOAD_PATH'], str(new_issue.id)))
 
@@ -104,7 +119,7 @@ def create(user_project):
 
 @bp.route('/<int:issue_id>/edit', methods=['POST'])
 @login_required
-@manage_issue_permission_required
+@edit_issue_permission_required
 def edit(project, issue):
     """Edits an issue.
 
@@ -117,11 +132,11 @@ def edit(project, issue):
 
     Args:
         project:
-            in: manage_issue_permission_required() decorator
+            in: edit_issue_permission_required() decorator
             type: Project
             description: A Project object whose id is the same as the id in the path.
         issue:
-            in: manage_issue_permission_required() decorator
+            in: edit_issue_permission_required() decorator
             type: Issue
             description: An Issue object whose id is the same as the id in the path.
         title:
@@ -167,9 +182,31 @@ def edit(project, issue):
         if None in (priority, assignee_id):
             abort(400)
 
-        edit_validation(issue, title, description, project, priority, assignee_id)
+        new_assignee = edit_validation(
+            issue, title, description, project, priority, assignee_id
+        )
         issue.priority = priority
-        issue.assignee_id = assignee_id
+        if issue.assignee != new_assignee:
+            if issue.assignee != current_user:
+                issue.assignee.add_notification(
+                    'remove assignee',
+                    {
+                        'avatar': current_user.avatar(),
+                        'fullname': current_user.fullname(),
+                        'issueTitle': issue.title,
+                    },
+                )
+            if new_assignee != current_user:
+                new_assignee.add_notification(
+                    'assign issue',
+                    {
+                        'avatar': current_user.avatar(),
+                        'fullname': current_user.fullname(),
+                        'projectId': project.id,
+                    },
+                    issue.id,
+                )
+            issue.assignee_id = assignee_id
     else:
         edit_validation(issue, title, description)
 
@@ -182,7 +219,7 @@ def edit(project, issue):
 
 @bp.route('/<int:issue_id>/delete', methods=['POST'])
 @login_required
-@manage_issue_permission_required
+@delete_issue_permission_required
 def delete(project, issue):
     """Deletes an issue.
 
@@ -192,11 +229,11 @@ def delete(project, issue):
 
     Args:
         project:
-            in: manage_issue_permission_required() decorator
+            in: delete_issue_permission_required() decorator
             type: Project
             description: A Project object whose id is the same as the id in the path.
         issue:
-            in: manage_issue_permission_required() decorator
+            in: delete_issue_permission_required() decorator
             type: Issue
             description: An Issue object whose id is the same as the id in the path.
 
@@ -206,13 +243,27 @@ def delete(project, issue):
         400:
             description: Bad request.
         403:
-            description: Current user does not have the permission and is not the
-                creator of the issue.
+            description: Forbidden.
         404:
             description: Project or issue does not exist.
     """
 
     db.session.delete(issue)
+    data = {
+        'avatar': current_user.avatar(),
+        'fullname': current_user.fullname(),
+        'projectTitle': project.title,
+        'issueTitle': issue.title,
+    }
+    if issue.creator != current_user:
+        issue.creator.add_notification(
+            'delete issue', data,
+        )
+    if issue.assignee is not None and issue.assignee != current_user:
+        issue.assignee.add_notification(
+            'delete issue', data,
+        )
+
     db.session.commit()
     shutil.rmtree(
         os.path.join(current_app.config['UPLOAD_PATH'], str(issue.id)),
@@ -237,12 +288,12 @@ def assign(project, issue):
             type: Issue
             description: An Issue object whose id is the same as the id in the path.
         priority:
-            in: json
-            type: formData
+            in: formData
+            type: String
             description: The priority level of the issue.
         assignee_id:
-            in: json
-            type: formData
+            in: formData
+            type: int
             description: The assignee's id.
 
     Responses:
@@ -251,8 +302,7 @@ def assign(project, issue):
         400:
             description: Bad request.
         403:
-            description: Current user does not have the permission and is not the
-                creator of the issue.
+            description: Current user does not have the permission.
         404:
             description: Project or issue does not exist.
     """
@@ -268,9 +318,152 @@ def assign(project, issue):
         issue.priority = priority
         issue.status = 'In Progress'
         issue.assignee_id = assignee_id
+        if issue.assignee != current_user:
+            issue.assignee.add_notification(
+                'assign issue',
+                {
+                    'avatar': current_user.avatar(),
+                    'fullname': current_user.fullname(),
+                    'projectId': project.id,
+                },
+                issue.id,
+            )
         db.session.commit()
 
     return redirect(url_for('project.project', id=project.id))
+
+
+@bp.route('/<int:issue_id>/restore', methods=['POST'])
+@login_required
+@restore_issue_permission_required
+def restore(project, issue):
+    """Restores a closed or resolved issue back to previous status.
+
+    Restores a closed or resolved issue back to previous status. Restores resolved
+    issue's status to In Progress. Restores closed issue's status to Open or In
+    Progress based on if there is an existing assignee.
+
+    Args:
+        project:
+            in: assign_issue_permission_required() decorator
+            type: Project
+            description: A Project object whose id is the same as the id in the path.
+        issue:
+            in: assign_issue_permission_required() decorator
+            type: Issue
+            description: An Issue object whose id is the same as the id in the path.
+        url:
+            in: formData
+            type: String
+            description: The url to be redirected to.
+
+    Responses:
+        302:
+            description: Redirect to the url page.
+        400:
+            description: Bad request.
+        403:
+            description: Current user does not have the permission.
+        404:
+            description: Project or issue does not exist.
+    """
+
+    redirect_url = request.form.get('url')
+    if issue.status == 'Closed':
+        if issue.assignee is None:
+            status = 'Open'
+            admin_reviewer_add_notification(
+                project,
+                'mark open',
+                {
+                    'avatar': current_user.avatar(),
+                    'fullname': current_user.fullname(),
+                    'issueTitle': issue.title,
+                },
+            )
+        else:
+            status = 'In Progress'
+            if issue.assignee != current_user:
+                issue.assignee.add_notification(
+                    'mark in progress',
+                    {
+                        'avatar': current_user.avatar(),
+                        'fullname': current_user.fullname(),
+                        'issueTitle': issue.title,
+                        'preStatus': issue.status,
+                        'projectId': project.id,
+                    },
+                    issue.id,
+                )
+        issue.closed_timestamp = None
+    else:
+        status = 'In Progress'
+        if issue.assignee != current_user:
+            issue.assignee.add_notification(
+                'mark in progress',
+                {
+                    'avatar': current_user.avatar(),
+                    'fullname': current_user.fullname(),
+                    'issueTitle': issue.title,
+                    'preStatus': issue.status,
+                    'projectId': project.id,
+                },
+                issue.id,
+            )
+        issue.resolved_timestamp = None
+    issue.status = status
+    db.session.commit()
+    return redirect(redirect_url)
+
+
+@bp.route('/<int:issue_id>/resolve', methods=['POST'])
+@login_required
+@resolve_issue_permission_required
+def resolve(project, issue):
+    """Marks a In Progress issue as Resolved.
+
+    Args:
+        project:
+            in: assign_issue_permission_required() decorator
+            type: Project
+            description: A Project object whose id is the same as the id in the path.
+        issue:
+            in: assign_issue_permission_required() decorator
+            type: Issue
+            description: An Issue object whose id is the same as the id in the path.
+        url:
+            in: formData
+            type: String
+            description: The url to be redirected to.
+
+    Responses:
+        302:
+            description: Redirect to the url page.
+        400:
+            description: Bad request.
+        403:
+            description: Current user does not have the permission and is not the
+            assignee of the issue.
+        404:
+            description: Project or issue does not exist.
+    """
+
+    redirect_url = request.form.get('url')
+
+    issue.status = 'Resolved'
+    issue.resolved_timestamp = time()
+
+    issue.assignee.add_notification(
+        'mark resolved',
+        {
+            'avatar': current_user.avatar(),
+            'fullname': current_user.fullname(),
+            'issueTitle': issue.title,
+        },
+    )
+
+    db.session.commit()
+    return redirect(redirect_url)
 
 
 @bp.route('/<int:issue_id>/close', methods=['POST'])
@@ -288,23 +481,47 @@ def close(project, issue):
             in: close_issue_permission_required() decorator
             type: Issue
             description: An Issue object whose id is the same as the id in the path.
+        url:
+            in: formData
+            type: String
+            description: The url to be redirected to.
 
     Responses:
         302:
-            description: Redirect to project page.
+            description: Redirect to the url page.
         400:
             description: Bad request.
         403:
-            description: Current user does not have the permission and is not the
-                creator of the issue.
+            description: Current user does not have the permission.
         404:
             description: Project or issue does not exist.
     """
 
+    redirect_url = request.form.get('url')
     issue.status = 'Closed'
-    db.session.commit()
+    issue.closed_timestamp = time()
 
-    return redirect(url_for('project.project', id=project.id))
+    if issue.assignee is None:
+        issue.creator.add_notification(
+            'mark closed',
+            {
+                'avatar': current_user.avatar(),
+                'fullname': current_user.fullname(),
+                'issueTitle': issue.title,
+            },
+        )
+    else:
+        issue.assignee.add_notification(
+            'mark closed',
+            {
+                'avatar': current_user.avatar(),
+                'fullname': current_user.fullname(),
+                'issueTitle': issue.title,
+            },
+        )
+
+    db.session.commit()
+    return redirect(redirect_url)
 
 
 @bp.route('/<int:issue_id>/upload', methods=['POST'])
@@ -389,6 +606,7 @@ def delete_file(issue, file):
 @login_required
 @comment_and_upload_permission_required
 def comment(project, issue):
+    """Submits a new comment."""
     text = request.form.get('text')
     error = comment_validation(text)
     if error is not None:
@@ -396,6 +614,27 @@ def comment(project, issue):
     else:
         new_comment = Comment(text=text, user=current_user, issue=issue)
         db.session.add(new_comment)
+        if current_user == issue.assignee:
+            admin_reviewer_add_notification(
+                project,
+                'new comment',
+                {
+                    'avatar': current_user.avatar(),
+                    'fullname': current_user.fullname(),
+                    'projectId': project.id,
+                },
+                issue.id,
+            )
+        else:
+            issue.assignee.add_notification(
+                'new comment',
+                {
+                    'avatar': current_user.avatar(),
+                    'fullname': current_user.fullname(),
+                    'projectId': project.id,
+                },
+                issue.id,
+            )
         db.session.commit()
     return redirect(url_for('issue.issue', id=project.id, issue_id=issue.id))
 
@@ -404,6 +643,7 @@ def comment(project, issue):
 @login_required
 @delete_comment_permission_required
 def delete_comment(project, issue, comment):
+    """Deletes a comment."""
     db.session.delete(comment)
     db.session.commit()
     return redirect(url_for('issue.issue', id=project.id, issue_id=issue.id))

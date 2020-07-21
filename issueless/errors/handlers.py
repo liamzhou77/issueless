@@ -37,7 +37,7 @@ def internal_server_error(error):
 
 
 @bp.app_errorhandler(ValidationError)
-def form_validation_error(error):
+def validation_error(error):
     return {'success': False, 'error': error.error}, 422
 
 

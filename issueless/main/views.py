@@ -16,16 +16,7 @@ def index():
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    """Returns the dashboard page.
-
-    Produces:
-        text/html
-
-    Responses:
-        200:
-            description: The dashboard html page.
-    """
-
+    """Returns the dashboard page."""
     user_projects = current_user.user_projects.order_by(UserProject.timestamp)
     return render_template(
         'dashboard.html',

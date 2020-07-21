@@ -162,9 +162,11 @@ class UserProject(db.Model):
         reviewer = Role.query.filter_by(name='Reviewer').first()
         developer = Role.query.filter_by(name='Developer').first()
         if self.role == reviewer:
-            self.role = developer
+            new_role = developer
         elif self.role == developer:
-            self.role = reviewer
+            new_role = reviewer
+        self.role = new_role
+        return new_role
 
 
 class Project(db.Model):
@@ -191,6 +193,14 @@ class Project(db.Model):
             .first()
             .user
         )
+
+    def get_admin_reviewers(self):
+        user_projects = self.user_projects.filter(
+            (UserProject.role == Role.query.filter_by(name='Admin').first())
+            | (UserProject.role == Role.query.filter_by(name='Reviewer').first())
+        )
+
+        return [user_project.user for user_project in user_projects]
 
 
 class Permission(object):
@@ -309,6 +319,8 @@ class Issue(db.Model):
     priority = db.Column(db.String(6), index=True)
     status = db.Column(db.String(11), default='Open', index=True, nullable=False)
     timestamp = db.Column(db.Float, index=True, default=time, nullable=False)
+    resolved_timestamp = db.Column(db.Float, index=True)
+    closed_timestamp = db.Column(db.Float, index=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assignee_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)

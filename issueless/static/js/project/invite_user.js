@@ -1,5 +1,5 @@
 const autocompleteList = document.querySelector('.autocomplete-list');
-const autocompleteListContainer = autocompleteList.parentElement.parentElement;
+const autocompleteListContainer = autocompleteList.parentElement;
 const autocompleteSelected = document.querySelector('.autocomplete-selected');
 
 const inviteForm = document.getElementById('user-invite-modal');

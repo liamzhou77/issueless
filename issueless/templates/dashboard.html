@@ -59,13 +59,23 @@
         {% set project = user_project.project %}
         {% set role = user_project.role.name %}
         {% set user_count = project.user_projects.count() %}
+
+        {% set resolved_issues_count = project.issues.filter_by(status='Resolved').count() %}
+        {% set total_issues_count = project.issues.filter_by(status='Open').count() + project.issues.filter_by(status='In Progress').count() + resolved_issues_count %}
         <div class="col-lg-6">
           <div class="card card-project">
             <div class="progress">
-              <div class="progress-bar {{ progress_bar_color[loop.index0 % 5] }}" role="progressbar" style="width: 60%;"
-                aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+              {% if total_issues_count == 0 %}
+              <div class="progress-bar {{ progress_bar_color[loop.index0 % 5] }}" role="progressbar" style="width: 0%;"
+                aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+              </div>
+              {% else %}
+              {% set percentage = resolved_issues_count / total_issues_count * 100 %}
+              <div class="progress-bar {{ progress_bar_color[loop.index0 % 5] }}" role="progressbar"
+                style="width: {{ percentage }}%;" aria-valuenow="{{ percentage}}" aria-valuemin="0" aria-valuemax="100">
+              </div>
+              {% endif %}
             </div>
-
             <div class="card-body">
               <div class="dropdown card-options">
                 <button class="btn-options" type="button" id="project-dropdown-button-{{ loop.index }}"
@@ -121,9 +131,8 @@
               <div class="card-meta d-flex justify-content-between">
                 <div class="d-flex align-items-center">
                   <i class="material-icons mr-1">playlist_add_check</i>
-                  <span class="text-small">6/10</span>
+                  <span class="text-small">{{ resolved_issues_count }}/{{ total_issues_count }}</span>
                 </div>
-                <span class="text-small" data-filter-by="text">Due 4 days</span>
               </div>
             </div>
           </div>
