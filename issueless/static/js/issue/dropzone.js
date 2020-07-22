@@ -15,8 +15,8 @@ Dropzone.options.issueDropzone = {
       const elem = file.previewElement;
       const { filename, size } = json;
       const { projectId, issueId } = elem.dataset;
-      const downloadLink = `/projects/${projectId}/issues/${issueId}/uploads?filename=${filename}`;
-      const deleteLink = `/projects/${projectId}/issues/${issueId}/uploads/delete?filename=${filename}`;
+      const downloadLink = `/projects/${projectId}/issues/${issueId}/uploads/${filename}`;
+      const deleteLink = `/projects/${projectId}/issues/${issueId}/uploads/${filename}/delete`;
 
       const filenameElem = elem.querySelector('.dz-filename');
       filenameElem.textContent = filename;
