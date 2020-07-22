@@ -10148,12 +10148,7 @@ h5 + .btn-round {
   flex-direction: column;
   overflow-y: auto;
 }
-#file-search ul {
-  overflow-y: auto;
-}
-#file-search ul::-webkit-scrollbar {
-  display: none;
-}
+
 .comment-team-sidebar .comment-team-sidebar-bottom::-webkit-scrollbar {
   display: none;
 }
