@@ -1,0 +1,1 @@
+web: flask db upgrade; flask insert-roles; gunicorn "issueless:create_app()"
