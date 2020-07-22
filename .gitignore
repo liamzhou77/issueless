@@ -22,7 +22,7 @@ package-lock.json
 package.json
 
 # Deployment Only
-packages/
-fonts/
-images/
-instance/
+# packages/
+# fonts/
+# images/
+# instance/
