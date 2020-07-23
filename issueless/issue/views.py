@@ -500,23 +500,25 @@ def close(project, issue):
     issue.closed_timestamp = time()
 
     if issue.assignee is None:
-        issue.creator.add_notification(
-            'mark closed',
-            {
-                'avatar': current_user.avatar(),
-                'fullname': current_user.fullname(),
-                'issueTitle': issue.title,
-            },
-        )
+        if issue.creator != current_user:
+            issue.creator.add_notification(
+                'mark closed',
+                {
+                    'avatar': current_user.avatar(),
+                    'fullname': current_user.fullname(),
+                    'issueTitle': issue.title,
+                },
+            )
     else:
-        issue.assignee.add_notification(
-            'mark closed',
-            {
-                'avatar': current_user.avatar(),
-                'fullname': current_user.fullname(),
-                'issueTitle': issue.title,
-            },
-        )
+        if issue.assignee != current_user:
+            issue.assignee.add_notification(
+                'mark closed',
+                {
+                    'avatar': current_user.avatar(),
+                    'fullname': current_user.fullname(),
+                    'issueTitle': issue.title,
+                },
+            )
 
     db.session.commit()
     return redirect(redirect_url)

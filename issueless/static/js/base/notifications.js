@@ -161,6 +161,7 @@ function generateNotifications() {
           } else {
             successFunc = () => {
               item.remove();
+              noNotification();
             };
           }
           acceptBtn.addEventListener('click', function () {
