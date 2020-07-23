@@ -198,14 +198,16 @@ function generateNotifications() {
             'material-icons mx-2 notification-redirect-icon';
           redirectIcon.textContent = 'navigate_next';
           redirectIcon.addEventListener('click', function () {
-            postFetch(`/notifications/read?id=${notificationId}`, (data2) => {
-              if (data2.success) {
-                window.location.href = `/projects/${data.projectId}/issues/${targetId}`;
-              } else {
-                $('.nav-item .dropdown-toggle').dropdown('hide');
-                addAlert(data2.error, 'danger');
-              }
-            });
+            if (!isRead) {
+              postFetch(`/notifications/read?id=${notificationId}`, (data2) => {
+                if (data2.success) {
+                  window.location.href = `/projects/${data.projectId}/issues/${targetId}`;
+                } else {
+                  $('.nav-item .dropdown-toggle').dropdown('hide');
+                  addAlert(data2.error, 'danger');
+                }
+              });
+            }
           });
           media.appendChild(redirectIcon);
         }
