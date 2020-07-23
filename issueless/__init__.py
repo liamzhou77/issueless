@@ -2,7 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 
-from flask import Flask
+from flask import Flask, redirect, request
 from flask_migrate import Migrate
 from pyngrok import ngrok
 
@@ -61,6 +61,12 @@ def create_app(test_config=None):
             )
             file_handler.setLevel(logging.INFO)
             app.logger.addHandler(file_handler)
+
+    @app.before_request
+    def before_request():
+        if request.url.startswith('http://') and app.env != "development":
+            url = request.url.replace('http://', 'https://', 1)
+            return redirect(url, 301)
 
     @app.shell_context_processor
     def make_shell_context():
