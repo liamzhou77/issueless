@@ -60,7 +60,8 @@ def dashboard():
                 (UserProject.role == Role.query.filter_by(name='Admin').first())
                 | (UserProject.role == Role.query.filter_by(name='Reviewer').first())
             )
-            if issue.comments.order_by(Comment.timestamp.desc()).limit(1).first().user
+            if issue.comments.first() is not None
+            and issue.comments.order_by(Comment.timestamp.desc()).limit(1).first().user
             == issue.assignee
         ],
     )
