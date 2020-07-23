@@ -1,10 +1,7 @@
-import os
-import shutil
 from time import time
 
 from flask import (
     abort,
-    current_app,
     flash,
     redirect,
     render_template,
@@ -250,7 +247,6 @@ def delete(project, issue):
             description: Project or issue does not exist.
     """
 
-    db.session.delete(issue)
     data = {
         'avatar': current_user.avatar(),
         'fullname': current_user.fullname(),
@@ -266,13 +262,11 @@ def delete(project, issue):
             'delete issue', data,
         )
 
-    delete_issue_files_in_s3(str(issue.id))
-
+    if issue.files.first() is not None:
+        delete_issue_files_in_s3(str(issue.id))
+    db.session.delete(issue)
     db.session.commit()
-    shutil.rmtree(
-        os.path.join(current_app.config['UPLOAD_PATH'], str(issue.id)),
-        ignore_errors=True,
-    )
+
     return redirect(url_for('project.project', id=project.id))
 
 

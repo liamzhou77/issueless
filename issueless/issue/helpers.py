@@ -154,13 +154,11 @@ def delete_issue_files_in_s3(prefix):
     resp = s3.list_objects_v2(
         Bucket=current_app.config['S3_BUCKET_NAME'], Prefix=prefix
     )
-    print(resp)
     try:
         s3.delete_objects(
             Bucket=current_app.config['S3_BUCKET_NAME'],
             Delete={'Objects': [{'Key': obj['Key']} for obj in resp['Contents']]},
         )
     except Exception as e:
-        print(e)
         logging.error(e)
         abort(400)
