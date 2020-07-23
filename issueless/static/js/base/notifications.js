@@ -208,6 +208,7 @@ function generateNotifications() {
                 }
               });
             }
+            window.location.href = `/projects/${data.projectId}/issues/${targetId}`;
           });
           media.appendChild(redirectIcon);
         }
