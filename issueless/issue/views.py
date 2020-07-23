@@ -9,7 +9,6 @@ from flask import (
     redirect,
     render_template,
     request,
-    send_from_directory,
     url_for,
 )
 from flask_login import current_user, login_required
@@ -34,9 +33,13 @@ from issueless.issue.helpers import (
     admin_reviewer_add_notification,
     assign_validation,
     comment_validation,
+    create_presigned_url,
     create_validation,
+    delete_file_in_s3,
+    delete_issue_files_in_s3,
     edit_validation,
     sizeof_fmt,
+    upload_file_to_s3,
 )
 from issueless.models import db, Comment, File, Issue, Permission, UserProject
 
@@ -112,7 +115,6 @@ def create(user_project):
             },
         )
         db.session.commit()
-        os.makedirs(os.path.join(current_app.config['UPLOAD_PATH'], str(new_issue.id)))
 
     return redirect(url_for('project.project', id=project.id))
 
@@ -263,6 +265,8 @@ def delete(project, issue):
         issue.assignee.add_notification(
             'delete issue', data,
         )
+
+    delete_issue_files_in_s3(str(issue.id))
 
     db.session.commit()
     shutil.rmtree(
@@ -562,15 +566,14 @@ def upload(project, issue):
         if issue.files.filter_by(filename=filename).first() is not None:
             return 'You can not upload duplicate files.', 422
 
-        uploaded_file.save(
-            os.path.join(current_app.config['UPLOAD_PATH'], str(issue.id), filename)
-        )
+        uploaded_file.seek(0, 2)
+        size = sizeof_fmt(uploaded_file.tell())
 
-        size = sizeof_fmt(
-            os.path.getsize(
-                os.path.join(current_app.config['UPLOAD_PATH'], str(issue.id), filename)
-            )
-        )
+        uploaded_file.seek(0)
+        error = upload_file_to_s3(uploaded_file, f'{issue.id}/{filename}')
+        if error is not None:
+            return error, 422
+
         file = File(filename=filename, uploader=current_user, issue=issue, size=size)
         db.session.add(file)
         db.session.commit()
@@ -583,10 +586,7 @@ def upload(project, issue):
 @download_file_permission_required
 def download(issue, file):
     """Sends the requested file to user."""
-    return send_from_directory(
-        os.path.join('..', current_app.config['UPLOAD_PATH'], str(issue.id)),
-        file.filename,
-    )
+    return redirect(create_presigned_url(f'{issue.id}/{file.filename}'))
 
 
 @bp.route('/<int:issue_id>/uploads/<filename>/delete', methods=['POST'])
@@ -594,11 +594,9 @@ def download(issue, file):
 @delete_file_permission_required
 def delete_file(issue, file):
     """Removes file form database and file system."""
+    delete_file_in_s3(f'{issue.id}/{file.filename}')
     db.session.delete(file)
     db.session.commit()
-    os.remove(
-        os.path.join(current_app.config['UPLOAD_PATH'], str(issue.id), file.filename)
-    )
     return {'success': True}
 
 
