@@ -21,7 +21,7 @@ more-itertools==8.4.0
 packaging==20.4
 pluggy==0.13.1
 psycopg2==2.8.5
-py==1.8.2
+py==1.10.0
 pycparser==2.20
 pyngrok==4.1.6
 pyparsing==2.4.7
